@@ -1,0 +1,13 @@
+#######################################################
+# This file allows the user to customize their Isis
+# configuration.  See the Isis Preference Dictionary
+# on our website isis.astrogeology.usgs.gov for a
+# full description of each group.
+########################################################
+
+Group = ShapeModel
+  RayTraceEngine = Bullet
+  OnError = Continue
+EndGroup
+
+End
