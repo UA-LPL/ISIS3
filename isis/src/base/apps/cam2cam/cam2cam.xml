@@ -44,12 +44,24 @@
        Fixed problems with reference bands on band-dependent instruments
      </change>
     <change name="Steven Lambright" date="2008-05-12">
-          Removed references to CubeInfo
+       Removed references to CubeInfo
     </change>
     <change name="Jesse Mapel" date="2018-05-17">
-          Changed transform to use the local radius computed by the output camera instead of
-          having the input camera re-compute it (sometimes incorrectly) from the latitude and
-          longitude. Fixes #5425.
+       Changed transform to use the local radius computed by the output camera instead of
+       having the input camera re-compute it (sometimes incorrectly) from the latitude and
+       longitude. Fixes #5425.
+    </change>
+    <change name="Kris Becker" date="2019-01-16">
+       Add option to also project off-body pixels
+    </change>
+    <change name="Kris Becker" date="2019-01-28">
+	   Add option to also project off-body pixels as well as trim pixels
+       in this mode that may result in duplicate views of the target
+       body. See OFFBODY and OFFBODYTRIM.
+    </change>
+	<change name="Sarah Sutton" date="2024-01-05">
+	   Incorporated Kris Becker's keyword additions OFFBODY and OFFBODYTRIM
+	   of 1/16/2019 and 1/28/2019 from UofA codebase to Astrogeology.	
     </change>
   </history>
 
@@ -153,6 +165,36 @@
             </description>
           </option>
         </list>
+      </parameter>
+      
+      <parameter name="OFFBODY">
+        <type>boolean</type>
+        <default><item>FALSE</item></default>
+        <brief>
+          Preserve offbody data
+        </brief>
+        <description>
+          This parameter is provided to allow the user to selectively keep data
+          off the target body. The RA/DEC value at the current image location is
+          used to map back to the input image. If it maps back, the data is
+          propagated to the output image. See also OFFBODYTRIM.
+        </description>
+      </parameter>
+      
+      <parameter name="OFFBODYTRIM">
+        <type>boolean</type>
+        <default><item>FALSE</item></default>
+        <brief>
+          Set select pixels in OFFBODY mode to NULL
+        </brief>
+        <description>
+           When using OFFBODY mode, there are situations where the pixel in
+           the MATCH do not intersect the target body, but the FROM
+           image map RA/DEC coordinate at the pixel do intersect the target
+           body. By setting OFFBODYTRIM=TRUE, these pixels will be set to 
+           NULL in the output projection. Otherwise, you risk multiple
+           (duplicate) views of the target body in the resulting projections.
+        </description>
       </parameter>
     </group>
   </groups>

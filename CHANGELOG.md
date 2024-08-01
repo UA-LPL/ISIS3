@@ -57,6 +57,7 @@ release.
 
 ### Added
 - Added versioned default values to lrowacphomap's PHOALGO and PHOPARCUBE parameters and updated lrowacphomap to handle them properly. [#5452](https://github.com/DOI-USGS/ISIS3/pull/5452)
+- Added input parameters OFFBODY and OFFBODYTRIM to noproj and cam2cam. [#3602](https://github.com/DOI-USGS/ISIS3/issues/3602) 
 
 ## [8.2.0] - 2024-04-18
 

@@ -64,25 +64,37 @@
     <change name="Ian Humphrey" date="2017-08-19">
       No longer propagates AlphaCube group to output cube. Fixes #4907.
     </change>
+    <change name="Kris Becker" date="2019-01-28">
+      Add OFFBODY option to also project off-body pixels. Added the 
+      OFFBODYTRIM option to not propagate target intersections in 
+      the FROM image into the projection when they don't intersect
+      into the MATCH view. Added use of unique temporary name 
+      creation for the match file template to avoid file name
+      collisions (e.g., when run in parallel in same directory)
+    </change>
     <change name="Kaitlyn Lee" date="2021-03-31">
       Refactored app to be callable and converted its tests to GTests.
     </change>
     <change name="Kris Becker" date="2021-05-06">
-          Added checks for ray tracing options in UofA OSIRIS-REx ISIS code base.
-          The keywords needed for Bullet to operate properly are RayTraceEngine,
-          BulletParts, and Tolerance. These parameters must be included in the
-          output label in order for cam2cam to run and subsequent use is consistent.
+      Added checks for ray tracing options in UofA OSIRIS-REx ISIS code base.
+      The keywords needed for Bullet to operate properly are RayTraceEngine,
+      BulletParts, and Tolerance. These parameters must be included in the
+      output label in order for cam2cam to run and subsequent use is consistent.
     </change>
     <change name="Kris Becker" date="2021-09-22">
-          Rework how temporary external files are identified in UofA OSIRIS-REx
-          ISIS code base after use by cam2cam and ensure they are all deleted. Fixes
-          #4813.
+      Rework how temporary external files are identified in UofA OSIRIS-REx
+      ISIS code base after use by cam2cam and ensure they are all deleted. Fixes
+      #4813.
     </change>
     <change name="Ken Edmundson" date="2023-12-14">
-          Incorporated Kris Becker's 2021-05-06 bug fix above into USGS code base.
+      Incorporated Kris Becker's 2021-05-06 bug fix above into USGS code base.
     </change>
     <change name="Ken Edmundson" date="2024-01-09">
-          Incorporated Kris Becker's 2021-09-22 bug fix above into USGS code base.
+      Incorporated Kris Becker's 2021-09-22 bug fix above into USGS code base.
+    </change>
+   <change name="Sarah Sutton" date="2024-07-31">
+	    Incorporated Kris Becker's keyword additions OFFBODY and OFFBODYTRIM
+	    of 1/28/2019 from UofA codebase to Astrogeology.	
     </change>
   </history>
 
@@ -266,6 +278,7 @@
                 </option>
              </list>
         </parameter>
+
        <parameter name="SAMPEXP">
            <type>double</type>
            <default>
@@ -288,8 +301,37 @@
                 This parameter expands the size of the output file in lines beyond the default size to prevent cropping of the 
                 undistorted image.  The undistorted image may be larger than the raw distorted image.
             </description>
-        </parameter>
-    </group>
+      </parameter>
 
+      <parameter name="OFFBODY">
+          <type>boolean</type>
+          <default><item>FALSE</item></default>
+          <brief>
+            Preserve offbody data
+          </brief>
+          <description>
+            This parameter is provided to allow the user to selectively keep data
+            off the target body. The Ra/Dec value at the current image location is
+            used to map back to the input image. If it maps back, the data is
+            propagated to the output image. See also OFFBODYTRIM.
+          </description>
+      </parameter>
+
+      <parameter name="OFFBODYTRIM">
+        <type>boolean</type>
+        <default><item>FALSE</item></default>
+        <brief>
+          Set select pixels in OFFBODY mode to NULL
+        </brief>
+        <description>
+           When using OFFBODY mode, there are situations where the pixel in
+           the MATCH does not intersect the target body, but the FROM
+           image map RA/DEC coordinate at the pixel does intersect the target
+           body. By setting OFFBODYTRIM=TRUE, these pixels will be set to 
+           NULL in the output project. Otherwise, you risk multiple
+           views of the target body in the resulting projections.
+        </description>
+      </parameter>
+    </group>
   </groups>
 </application>
