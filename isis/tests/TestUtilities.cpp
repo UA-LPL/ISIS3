@@ -312,7 +312,6 @@ namespace Isis {
     return differences;
   }
 
-
   /**
    * Asserts that two JSON objects are the same except for numerical values are within
    * a given tolerance.
@@ -342,34 +341,47 @@ namespace Isis {
 
   // Check to see if a QString contains only numeric values.
   bool isNumeric(QString str){
-    QRegExp re("-*\\d*.*\\d*");
+    QRegExp re("^(?:[+-]?(?:\\d+|\\d*\\.(?=\\d)\\d*)(?:[eE][+-]?\\d+)?)$");
     return re.exactMatch(str);
   }
-
 
   // Compares CSV lines
   void compareCsvLine(CSVReader::CSVAxis csvLine, QString headerStr, int initialIndex) {
     QStringList compareMe = headerStr.split(",");
     for (int i=initialIndex; i<compareMe.size(); i++) {
-      if (isNumeric(compareMe[i].trimmed())) {
+      if (isNumeric(compareMe[i].trimmed()) && isNumeric(QString(csvLine[i].trimmed()))) {
         EXPECT_NEAR(csvLine[i].toDouble(), compareMe[i].toDouble(), 0.000001);
       }
       else{
-        EXPECT_EQ(QString(csvLine[i]).toStdString(), compareMe[i].toStdString());
+        EXPECT_EQ(QString(csvLine[i].trimmed()).toStdString(), compareMe[i].trimmed().toStdString());
       }
     }
   };
 
 
+  // Compares CSV lines allowing use of a custom delimiter (defaults to ",")
+  void compareCsvLineCustomDelimiter(CSVReader::CSVAxis csvLine, QString headerStr,
+                                     QString delimiter, int initialIndex) {
+    QStringList compareMe = headerStr.split(delimiter);
+    for (int i=initialIndex; i<compareMe.size(); i++) {
+      if (isNumeric(compareMe[i].trimmed()) && isNumeric(QString(csvLine[i].trimmed()))) {
+        EXPECT_NEAR(csvLine[i].toDouble(), compareMe[i].toDouble(), 0.000001);
+      }
+      else{
+        EXPECT_EQ(QString(csvLine[i].trimmed()).toStdString(), compareMe[i].trimmed().toStdString());
+      }
+    }
+  };
+
   // Compares CSV lines
   void compareCsvLine(CSVReader::CSVAxis csvLine, CSVReader::CSVAxis csvLine2, int initialIndex,
                       double tolerance) {
     for (int i=initialIndex; i < csvLine.dim(); i++) {
-      if (isNumeric(QString(csvLine[i].trimmed()))) {
+      if (isNumeric(QString(csvLine[i].trimmed())) && isNumeric(QString(csvLine2[i].trimmed()))) {
         EXPECT_NEAR(csvLine[i].toDouble(), csvLine2[i].toDouble(), tolerance);
       }
       else{
-        EXPECT_EQ(QString(csvLine[i]).toStdString(), csvLine2[i].toStdString());
+        EXPECT_EQ(QString(csvLine[i].trimmed()).toStdString(), csvLine2[i].trimmed().toStdString());
       }
     }
   };

@@ -96,6 +96,10 @@
 	    Incorporated Kris Becker's keyword additions OFFBODY and OFFBODYTRIM
 	    of 1/28/2019 from UofA codebase to Astrogeology.	
     </change>
+    <change name="Ken Edmundson" date="2024-08-07">
+          Additional bug fix to address persistent temporary lbl file after
+          running noproj. Fixes #5577.
+    </change>
   </history>
 
   <category>
