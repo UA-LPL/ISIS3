@@ -411,32 +411,36 @@ TEST_F(LineScannerCube, FunctionalTestNoprojLineScanner) {
 
 /**
    * Test Noproj parameters OFFBODY=TRUE and OFFBODYTRIM=FALSE
-   * Call Skypt to check on- and off-body pixels for valid values or Null.
+   * Call Skypt to check that pixels in noprojed image 
+   * have the expected values (Null or valid). 
    *
    * Input ...
-   *   1) Level 1 cube, spiceinited TagCam cube.
-   * 
+   *   1) From cube, Level 1 cube, spiceinited, cropped MapCam cube.
+   *   2) Match cube, Level 1 cube, spiceinited, cropped MapCam cube.
    * Output ...
-   *    1) Pvl log file from Skypt.
+   *   1) Noproj'ed cube.
+   *   2) Pvl log file from Skypt.
    *
-   * Use Skypt to check if on- and off-body pixels have valid or Null values as expected.
   */
-TEST_F(DefaultCube, FunctionalTestNoprojOffBodyTrueOffBodyTrimFalse) {
+TEST_F(DefaultCube, FunctionalTestNoprojOffBodyTrueOffBodyTrimFalse) { 
 
-  QString iCubeName = "$ISISROOT/../isis/tests/data/osirisRexImages/20181202T100807S333_map_radL2pan_crop.cub";
-  QString cubeFileName = tempDir.path() + "/output.cub";
-  QVector<QString> args = {"to=" + cubeFileName, "offbody=TRUE", "offbodytrim=FALSE"};
+  QString iCubeName = "$ISISROOT/../isis/tests/data/osirisRexImages/20190509T180552S020_crop.cub";
+  QString mCubeName = "$ISISROOT/../isis/tests/data/osirisRexImages/20190509T174620S424_crop.cub";
+  QString noprojCubeName = tempDir.path() + "/output.cub";
+  QVector<QString> args = {"to=" + noprojCubeName, "offbody=TRUE", "offbodytrim=FALSE"};
 
   Cube iCube;
+  Cube mCube;
   iCube.open(iCubeName);
+  mCube.open(mCubeName);
   
-  // Run noproj with empty match cube input.
+  // Run noproj with match cube specified.
   UserInterface options(APP_XML, args); 
-  noproj(&iCube, NULL, options);
+  noproj(&iCube, &mCube, options);
 
   // Check results of noproj cube.
-  Cube oCube(cubeFileName);
-  Pvl *isisLabel = oCube.label();
+  Cube noprojCube(noprojCubeName);
+  Pvl *isisLabel = noprojCube.label();
   PvlGroup instGroup = isisLabel->findGroup("Instrument", Pvl::Traverse);
   EXPECT_PRED_FORMAT2(AssertQStringsEqual, instGroup.findKeyword("SpacecraftName"), "IdealSpacecraft");
   EXPECT_PRED_FORMAT2(AssertQStringsEqual, instGroup.findKeyword("InstrumentId"), "IdealCamera");
@@ -444,86 +448,110 @@ TEST_F(DefaultCube, FunctionalTestNoprojOffBodyTrueOffBodyTrimFalse) {
   EXPECT_EQ((int) instGroup.findKeyword("SampleDetectors"), 1050);
   EXPECT_EQ((int) instGroup.findKeyword("LineDetectors"), 1050);
   EXPECT_PRED_FORMAT2(AssertQStringsEqual, instGroup.findKeyword("InstrumentType"), "FRAMING");
-  EXPECT_DOUBLE_EQ((double) instGroup.findKeyword("EphemerisTime"), 597017358.51577);
-  EXPECT_PRED_FORMAT2(AssertQStringsEqual, instGroup.findKeyword("StartTime"), "2018-12-02T10:08:07.333");
+  EXPECT_DOUBLE_EQ((double) instGroup.findKeyword("EphemerisTime"), 610696049.67661);
+  EXPECT_PRED_FORMAT2(AssertQStringsEqual, instGroup.findKeyword("StartTime"), "2019-05-09T17:46:20.424");
   EXPECT_EQ((int) instGroup.findKeyword("FocalPlaneXDependency"), 2);
   EXPECT_DOUBLE_EQ((double) instGroup.findKeyword("TransX"), 1.0);
   EXPECT_DOUBLE_EQ((double) instGroup.findKeyword("TransY"), 1.0);
 
-  FileName matchedCubeName(instGroup.findKeyword("matchedCube"));
-  FileName inputCubeName(iCube.fileName());
+  FileName matchedCubeName(instGroup.findKeyword("MatchedCube"));
+  FileName inputCubeName(mCube.fileName());
   EXPECT_PRED_FORMAT2(AssertQStringsEqual, matchedCubeName.name(), inputCubeName.name());
   
-  // Call Skypt on an off-body pixel and check for valid DN.
-  QVector<QString> argsSkyptOff = {"from="+oCube.fileName(),
-                           "format=pvl",
-                           "type=image", 
-                           "sample=100.0", 
-                           "line=100.0"};                
-  UserInterface optionsSkyptOff(APP_XML1, argsSkyptOff); 
-  Pvl appLogOff;
-  skypt(&oCube, optionsSkyptOff, &appLogOff);
-  PvlGroup skyPointOff = appLogOff.findGroup("SkyPoint");
+  
+  // Call Skypt on an off-body sky pixel and check for valid pixel value.
+  QVector<QString> argsSkypt1 = {"from="+noprojCube.fileName(),
+                                 "format=pvl",
+                                 "type=image", 
+                                 "sample=20.0", 
+                                 "line=30.0"};                
+  UserInterface uiSkypt1(APP_XML1, argsSkypt1);
+  Pvl appLogSkypt1;
+  skypt(&noprojCube, uiSkypt1, &appLogSkypt1);
+  PvlGroup skyPoint1 = appLogSkypt1.findGroup("SkyPoint");
 
-  // Off-body pixel is expected to be valid.
-  EXPECT_DOUBLE_EQ( (double) skyPointOff.findKeyword("Sample"), 100.0);
-  EXPECT_DOUBLE_EQ( (double) skyPointOff.findKeyword("Line"), 100.0);
-  EXPECT_NEAR( (double) skyPointOff.findKeyword("RightAscension"), 327.50705984365, 1e-8);
-  EXPECT_NEAR( (double) skyPointOff.findKeyword("Declination"), 1.2533779356437, 1e-8);
-  EXPECT_NEAR( (double) skyPointOff.findKeyword("EphemerisTime"), 597017358.51577, 1e-8);
-  EXPECT_NEAR( (double) skyPointOff.findKeyword("PixelValue"), 0.00022801473, 1e-8);
-  EXPECT_NEAR( (double) skyPointOff.findKeyword("CelestialNorthClockAngle"), 282.50819767996, 1e-8);
+  EXPECT_DOUBLE_EQ( (double) skyPoint1.findKeyword("Sample"), 20.0);
+  EXPECT_DOUBLE_EQ( (double) skyPoint1.findKeyword("Line"), 30.0);
+  EXPECT_NEAR( (double) skyPoint1.findKeyword("RightAscension"), 181.57392134043, 1e-8);
+  EXPECT_NEAR( (double) skyPoint1.findKeyword("Declination"), -1.7118980812905, 1e-8);
+  EXPECT_NEAR( (double) skyPoint1.findKeyword("EphemerisTime"), 610696049.67661, 1e-8);
+  EXPECT_NEAR( (double) skyPoint1.findKeyword("PixelValue"), 0.00028321485, 1e-8);
+  EXPECT_NEAR( (double) skyPoint1.findKeyword("CelestialNorthClockAngle"), 239.06702667495, 1e-8);
 
-  // Call Skypt on an on-body pixel and check for valid DN.
-  QVector<QString> argsSkyptOn = {"from="+oCube.fileName(),
-                           "format=pvl",
-                           "type=image", 
-                           "sample=512.0", 
-                           "line=512.0"};                
-  UserInterface optionsSkyptOn(APP_XML1, argsSkyptOn); 
-  Pvl appLogOn;
-  skypt(&oCube, optionsSkyptOn, &appLogOn);
-  PvlGroup skyPointOn = appLogOn.findGroup("SkyPoint");
+  // Call Skypt on an off-body pixel and check for valid pixel value.
+  QVector<QString> argsSkypt2 = {"from="+noprojCube.fileName(),
+                                 "format=pvl",
+                                 "type=image", 
+                                 "sample=100.0", 
+                                 "line=200.0"};                
+  UserInterface uiSkypt2(APP_XML1, argsSkypt2);
+  Pvl appLogSkypt2;
+  skypt(&noprojCube, uiSkypt2, &appLogSkypt2);
+  PvlGroup skyPoint2 = appLogSkypt2.findGroup("SkyPoint");
  
   // On-body pixel is expected to be valid.
-  EXPECT_DOUBLE_EQ( (double) skyPointOn.findKeyword("Sample"), 512.0);
-  EXPECT_DOUBLE_EQ( (double) skyPointOn.findKeyword("Line"), 512.0);
-  EXPECT_NEAR( (double) skyPointOn.findKeyword("RightAscension"), 326.28968389699, 1e-8);
-  EXPECT_NEAR( (double) skyPointOn.findKeyword("Declination"), -0.65689737966008, 1e-8);
-  EXPECT_NEAR( (double) skyPointOn.findKeyword("EphemerisTime"), 597017358.51577, 1e-8);
-  EXPECT_NEAR( (double) skyPointOn.findKeyword("PixelValue"), 0.0051794839, 1e-8);
-  EXPECT_NEAR( (double) skyPointOn.findKeyword("CelestialNorthClockAngle"), 282.49290760168, 1e-8);
+  EXPECT_DOUBLE_EQ( (double) skyPoint2.findKeyword("Sample"), 100.0);
+  EXPECT_DOUBLE_EQ( (double) skyPoint2.findKeyword("Line"), 200.0);
+  EXPECT_NEAR( (double) skyPoint2.findKeyword("RightAscension"), 180.84768002386, 1e-8);
+  EXPECT_NEAR( (double) skyPoint2.findKeyword("Declination"), -1.6384132695942, 1e-8);
+  EXPECT_NEAR( (double) skyPoint2.findKeyword("EphemerisTime"), 610696049.67661, 1e-8);
+  EXPECT_NEAR( (double) skyPoint2.findKeyword("PixelValue"), 0.0258494, 1e-8);
+  EXPECT_NEAR( (double) skyPoint2.findKeyword("CelestialNorthClockAngle"), 239.03650950112, 1e-8);
+
+ // Call Skypt on an on-body pixel and check for valid pixel value.
+  QVector<QString> argsSkypt3 = {"from="+noprojCube.fileName(),
+                                 "format=pvl",
+                                 "type=image", 
+                                 "sample=500.0", 
+                                 "line=500.0"};                
+  UserInterface uiSkypt3(APP_XML1, argsSkypt3); 
+  Pvl appLogSkypt3;
+  skypt(&noprojCube, uiSkypt3, &appLogSkypt3);
+  PvlGroup skyPoint3 = appLogSkypt3.findGroup("SkyPoint");
+ 
+  // On-body pixel is expected to be valid.
+  EXPECT_DOUBLE_EQ( (double) skyPoint3.findKeyword("Sample"), 500.0);
+  EXPECT_DOUBLE_EQ( (double) skyPoint3.findKeyword("Line"), 500.0);
+  EXPECT_NEAR( (double) skyPoint3.findKeyword("RightAscension"), 179.04568028209, 1e-8);
+  EXPECT_NEAR( (double) skyPoint3.findKeyword("Declination"), -2.3705704590705, 1e-8);
+  EXPECT_NEAR( (double) skyPoint3.findKeyword("EphemerisTime"), 610696049.67661, 1e-8);
+  EXPECT_NEAR( (double) skyPoint3.findKeyword("PixelValue"), 0.030888285, 1e-8);
+  EXPECT_NEAR( (double) skyPoint3.findKeyword("CelestialNorthClockAngle"), 238.96088012888, 1e-8);
 
 }
 
-/**
+/*
    * Test Noproj parameters OFFBODY=TRUE and OFFBODYTRIM=TRUE
-   * Call Skypt to check on- and off-body pixels for valid values or Null.
+   * Call Skypt to check that pixels in noprojed image 
+   * have the expected values (Null or valid). 
    *
    * Input ...
-   *   1) Level 1 cube, spiceinited TagCam cube.
-   * 
+   *   1) From cube, Level 1 cube, spiceinited, cropped MapCam cube.
+   *   2) Match cube, Level 1 cube, spiceinited, cropped MapCam cube.
    * Output ...
-   *    1) Pvl log file from Skypt.
+   *   1) Noproj'ed cube.
+   *   2) Pvl log file from Skypt.
    *
-   * Use Skypt to check if on- and off-body pixels have valid or Null values as expected.
-  */
-TEST_F(DefaultCube, FunctionalTestNoprojOffBodyTrueOffBodyTrimTrue) {
+*/
+TEST_F(DefaultCube, FunctionalTestNoprojOffBodyTrueOffBodyTrimTrue) { 
 
-  QString iCubeName = "$ISISROOT/../isis/tests/data/osirisRexImages/20181202T100807S333_map_radL2pan_crop.cub";
-  QString cubeFileName = tempDir.path() + "/output.cub";
-  QVector<QString> args = {"to=" + cubeFileName, "offbody=TRUE", "offbodytrim=TRUE"};
+  QString iCubeName = "$ISISROOT/../isis/tests/data/osirisRexImages/20190509T180552S020_crop.cub";
+  QString mCubeName = "$ISISROOT/../isis/tests/data/osirisRexImages/20190509T174620S424_crop.cub";
+  QString noprojCubeName = tempDir.path() + "/output.cub";
+  QVector<QString> args = {"to=" + noprojCubeName, "offbody=TRUE", "offbodytrim=TRUE"};
 
   Cube iCube;
+  Cube mCube;
   iCube.open(iCubeName);
+  mCube.open(mCubeName);
   
-  // Run noproj with empty match cube input.
+  // Run noproj with match cube specified.
   UserInterface options(APP_XML, args); 
-  noproj(&iCube, NULL, options);
+  noproj(&iCube, &mCube, options);
 
   // Check results of noproj cube.
-  Cube oCube(cubeFileName);
-  Pvl *isisLabel = oCube.label();
+  Cube noprojCube(noprojCubeName);
+  Pvl *isisLabel = noprojCube.label();
   PvlGroup instGroup = isisLabel->findGroup("Instrument", Pvl::Traverse);
   EXPECT_PRED_FORMAT2(AssertQStringsEqual, instGroup.findKeyword("SpacecraftName"), "IdealSpacecraft");
   EXPECT_PRED_FORMAT2(AssertQStringsEqual, instGroup.findKeyword("InstrumentId"), "IdealCamera");
@@ -531,87 +559,112 @@ TEST_F(DefaultCube, FunctionalTestNoprojOffBodyTrueOffBodyTrimTrue) {
   EXPECT_EQ((int) instGroup.findKeyword("SampleDetectors"), 1050);
   EXPECT_EQ((int) instGroup.findKeyword("LineDetectors"), 1050);
   EXPECT_PRED_FORMAT2(AssertQStringsEqual, instGroup.findKeyword("InstrumentType"), "FRAMING");
-  EXPECT_DOUBLE_EQ((double) instGroup.findKeyword("EphemerisTime"), 597017358.51577);
-  EXPECT_PRED_FORMAT2(AssertQStringsEqual, instGroup.findKeyword("StartTime"), "2018-12-02T10:08:07.333");
+  EXPECT_DOUBLE_EQ((double) instGroup.findKeyword("EphemerisTime"), 610696049.67661);
+  EXPECT_PRED_FORMAT2(AssertQStringsEqual, instGroup.findKeyword("StartTime"), "2019-05-09T17:46:20.424");
   EXPECT_EQ((int) instGroup.findKeyword("FocalPlaneXDependency"), 2);
   EXPECT_DOUBLE_EQ((double) instGroup.findKeyword("TransX"), 1.0);
   EXPECT_DOUBLE_EQ((double) instGroup.findKeyword("TransY"), 1.0);
 
-  FileName matchedCubeName(instGroup.findKeyword("matchedCube"));
-  FileName inputCubeName(iCube.fileName());
+  FileName matchedCubeName(instGroup.findKeyword("MatchedCube"));
+  FileName inputCubeName(mCube.fileName());
   EXPECT_PRED_FORMAT2(AssertQStringsEqual, matchedCubeName.name(), inputCubeName.name());
   
-  // Call Skypt on an off-body pixel and check for valid DN.
-  QVector<QString> argsSkyptOff = {"from="+oCube.fileName(),
-                           "format=pvl",
-                           "type=image", 
-                           "sample=100.0", 
-                           "line=100.0"};                
-  UserInterface optionsSkyptOff(APP_XML1, argsSkyptOff); 
-  Pvl appLogOff;
-  skypt(&oCube, optionsSkyptOff, &appLogOff);
-  PvlGroup skyPointOff = appLogOff.findGroup("SkyPoint");
+  
+  // Call Skypt on an off-body sky pixel and check for valid pixel value.
+  QVector<QString> argsSkypt1 = {"from="+noprojCube.fileName(),
+                                 "format=pvl",
+                                 "type=image", 
+                                 "sample=20.0", 
+                                 "line=30.0"};                
+  UserInterface uiSkypt1(APP_XML1, argsSkypt1);
+  Pvl appLogSkypt1;
+  skypt(&noprojCube, uiSkypt1, &appLogSkypt1);
+  PvlGroup skyPoint1 = appLogSkypt1.findGroup("SkyPoint");
 
-  // Off-body pixel is expected to be valid.
-  EXPECT_DOUBLE_EQ( (double) skyPointOff.findKeyword("Sample"), 100.0);
-  EXPECT_DOUBLE_EQ( (double) skyPointOff.findKeyword("Line"), 100.0);
-  EXPECT_NEAR( (double) skyPointOff.findKeyword("RightAscension"), 327.50705984365, 1e-8);
-  EXPECT_NEAR( (double) skyPointOff.findKeyword("Declination"), 1.2533779356437, 1e-8);
-  EXPECT_NEAR( (double) skyPointOff.findKeyword("EphemerisTime"), 597017358.51577, 1e-8);
-  EXPECT_NEAR( (double) skyPointOff.findKeyword("PixelValue"), 0.00022801473, 1e-8);
-  EXPECT_NEAR( (double) skyPointOff.findKeyword("CelestialNorthClockAngle"), 282.50819767996, 1e-8);
+  EXPECT_DOUBLE_EQ( (double) skyPoint1.findKeyword("Sample"), 20.0);
+  EXPECT_DOUBLE_EQ( (double) skyPoint1.findKeyword("Line"), 30.0);
+  EXPECT_NEAR( (double) skyPoint1.findKeyword("RightAscension"), 181.57392134043, 1e-8);
+  EXPECT_NEAR( (double) skyPoint1.findKeyword("Declination"), -1.7118980812905, 1e-8);
+  EXPECT_NEAR( (double) skyPoint1.findKeyword("EphemerisTime"), 610696049.67661, 1e-8);
+  EXPECT_NEAR( (double) skyPoint1.findKeyword("PixelValue"), 0.00028321485, 1e-8);
+  EXPECT_NEAR( (double) skyPoint1.findKeyword("CelestialNorthClockAngle"), 239.06702667495, 1e-8);
 
-  // Call Skypt on an on-body pixel and check for valid DN.
-  QVector<QString> argsSkyptOn = {"from="+oCube.fileName(),
-                           "format=pvl",
-                           "type=image", 
-                           "sample=512.0", 
-                           "line=512.0"};                
-  UserInterface optionsSkyptOn(APP_XML1, argsSkyptOn); 
-  Pvl appLogOn;
-  skypt(&oCube, optionsSkyptOn, &appLogOn);
-  PvlGroup skyPointOn = appLogOn.findGroup("SkyPoint");
+  // Call Skypt on an off-body pixel and check for a Null pixel value.
+  QVector<QString> argsSkypt2 = {"from="+noprojCube.fileName(),
+                                 "format=pvl",
+                                 "type=image", 
+                                 "sample=100.0", 
+                                 "line=200.0"};                
+  UserInterface uiSkypt2(APP_XML1, argsSkypt2);
+  Pvl appLogSkypt2;
+  skypt(&noprojCube, uiSkypt2, &appLogSkypt2);
+  PvlGroup skyPoint2 = appLogSkypt2.findGroup("SkyPoint");
  
   // On-body pixel is expected to be valid.
-  EXPECT_DOUBLE_EQ( (double) skyPointOn.findKeyword("Sample"), 512.0);
-  EXPECT_DOUBLE_EQ( (double) skyPointOn.findKeyword("Line"), 512.0);
-  EXPECT_NEAR( (double) skyPointOn.findKeyword("RightAscension"), 326.28968389699, 1e-8);
-  EXPECT_NEAR( (double) skyPointOn.findKeyword("Declination"), -0.65689737966008, 1e-8);
-  EXPECT_NEAR( (double) skyPointOn.findKeyword("EphemerisTime"), 597017358.51577, 1e-8);
-  EXPECT_NEAR( (double) skyPointOn.findKeyword("PixelValue"), 0.0051794839, 1e-8);
-  EXPECT_NEAR( (double) skyPointOn.findKeyword("CelestialNorthClockAngle"), 282.49290760168, 1e-8);
+  EXPECT_DOUBLE_EQ( (double) skyPoint2.findKeyword("Sample"), 100.0);
+  EXPECT_DOUBLE_EQ( (double) skyPoint2.findKeyword("Line"), 200.0);
+  EXPECT_NEAR( (double) skyPoint2.findKeyword("RightAscension"), 180.84768002386, 1e-8);
+  EXPECT_NEAR( (double) skyPoint2.findKeyword("Declination"), -1.6384132695942, 1e-8);
+  EXPECT_NEAR( (double) skyPoint2.findKeyword("EphemerisTime"), 610696049.67661, 1e-8);
+  EXPECT_PRED_FORMAT2(AssertQStringsEqual, skyPoint2.findKeyword("PixelValue"), "Null");
+  EXPECT_NEAR( (double) skyPoint2.findKeyword("CelestialNorthClockAngle"), 239.03650950112, 1e-8);
+
+ // Call Skypt on an on-body pixel and check for valid pixel value.
+  QVector<QString> argsSkypt3 = {"from="+noprojCube.fileName(),
+                                 "format=pvl",
+                                 "type=image", 
+                                 "sample=500.0", 
+                                 "line=500.0"};                
+  UserInterface uiSkypt3(APP_XML1, argsSkypt3); 
+  Pvl appLogSkypt3;
+  skypt(&noprojCube, uiSkypt3, &appLogSkypt3);
+  PvlGroup skyPoint3 = appLogSkypt3.findGroup("SkyPoint");
+ 
+  // On-body pixel is expected to be valid.
+  EXPECT_DOUBLE_EQ( (double) skyPoint3.findKeyword("Sample"), 500.0);
+  EXPECT_DOUBLE_EQ( (double) skyPoint3.findKeyword("Line"), 500.0);
+  EXPECT_NEAR( (double) skyPoint3.findKeyword("RightAscension"), 179.04568028209, 1e-8);
+  EXPECT_NEAR( (double) skyPoint3.findKeyword("Declination"), -2.3705704590705, 1e-8);
+  EXPECT_NEAR( (double) skyPoint3.findKeyword("EphemerisTime"), 610696049.67661, 1e-8);
+  EXPECT_NEAR( (double) skyPoint3.findKeyword("PixelValue"), 0.030888285, 1e-8);
+  EXPECT_NEAR( (double) skyPoint3.findKeyword("CelestialNorthClockAngle"), 238.96088012888, 1e-8);
 
 }
+
 
 
 /**
    * Test Noproj parameters OFFBODY=FALSE and OFFBODYTRIM=TRUE
-   * Call Skypt to check on- and off-body pixels for valid values or Null.
+   * Call Skypt to check that pixels in noprojed image 
+   * have the expected values (Null or valid). 
    *
    * Input ...
-   *   1) Level 1 cube, spiceinited TagCam cube.
-   * 
+   *   1) From cube, Level 1 cube, spiceinited, cropped MapCam cube.
+   *   2) Match cube, Level 1 cube, spiceinited, cropped MapCam cube.
    * Output ...
-   *    1) Pvl log file from Skypt.
+   *   1) Noproj'ed cube.
+   *   2) Pvl log file from Skypt.
    *
-   * Use Skypt to check if on- and off-body pixels have valid or Null values as expected.
   */
-TEST_F(DefaultCube, FunctionalTestNoprojOffBodyFalseOffBodyTrimTrue) {
+ TEST_F(DefaultCube, FunctionalTestNoprojOffBodyFalseOffBodyTrimTrue) { 
 
-  QString iCubeName = "$ISISROOT/../isis/tests/data/osirisRexImages/20181202T100807S333_map_radL2pan_crop.cub";
-  QString cubeFileName = tempDir.path() + "/output.cub";
-  QVector<QString> args = {"to=" + cubeFileName, "offbody=FALSE", "offbodytrim=TRUE"};
+  QString iCubeName = "$ISISROOT/../isis/tests/data/osirisRexImages/20190509T180552S020_crop.cub";
+  QString mCubeName = "$ISISROOT/../isis/tests/data/osirisRexImages/20190509T174620S424_crop.cub";
+  QString noprojCubeName = tempDir.path() + "/output.cub";
+  QVector<QString> args = {"to=" + noprojCubeName, "offbody=FALSE", "offbodytrim=TRUE"};
 
   Cube iCube;
+  Cube mCube;
   iCube.open(iCubeName);
+  mCube.open(mCubeName);
   
-  // Run noproj with empty match cube input.
+  // Run noproj with match cube specified.
   UserInterface options(APP_XML, args); 
-  noproj(&iCube, NULL, options);
+  noproj(&iCube, &mCube, options);
 
   // Check results of noproj cube.
-  Cube oCube(cubeFileName);
-  Pvl *isisLabel = oCube.label();
+  Cube noprojCube(noprojCubeName);
+  Pvl *isisLabel = noprojCube.label();
   PvlGroup instGroup = isisLabel->findGroup("Instrument", Pvl::Traverse);
   EXPECT_PRED_FORMAT2(AssertQStringsEqual, instGroup.findKeyword("SpacecraftName"), "IdealSpacecraft");
   EXPECT_PRED_FORMAT2(AssertQStringsEqual, instGroup.findKeyword("InstrumentId"), "IdealCamera");
@@ -619,87 +672,112 @@ TEST_F(DefaultCube, FunctionalTestNoprojOffBodyFalseOffBodyTrimTrue) {
   EXPECT_EQ((int) instGroup.findKeyword("SampleDetectors"), 1050);
   EXPECT_EQ((int) instGroup.findKeyword("LineDetectors"), 1050);
   EXPECT_PRED_FORMAT2(AssertQStringsEqual, instGroup.findKeyword("InstrumentType"), "FRAMING");
-  EXPECT_DOUBLE_EQ((double) instGroup.findKeyword("EphemerisTime"), 597017358.51577);
-  EXPECT_PRED_FORMAT2(AssertQStringsEqual, instGroup.findKeyword("StartTime"), "2018-12-02T10:08:07.333");
+  EXPECT_DOUBLE_EQ((double) instGroup.findKeyword("EphemerisTime"), 610696049.67661);
+  EXPECT_PRED_FORMAT2(AssertQStringsEqual, instGroup.findKeyword("StartTime"), "2019-05-09T17:46:20.424");
   EXPECT_EQ((int) instGroup.findKeyword("FocalPlaneXDependency"), 2);
   EXPECT_DOUBLE_EQ((double) instGroup.findKeyword("TransX"), 1.0);
   EXPECT_DOUBLE_EQ((double) instGroup.findKeyword("TransY"), 1.0);
 
-  FileName matchedCubeName(instGroup.findKeyword("matchedCube"));
-  FileName inputCubeName(iCube.fileName());
+  FileName matchedCubeName(instGroup.findKeyword("MatchedCube"));
+  FileName inputCubeName(mCube.fileName());
   EXPECT_PRED_FORMAT2(AssertQStringsEqual, matchedCubeName.name(), inputCubeName.name());
   
-  // Call Skypt on an off-body pixel and check for valid DN.
-  QVector<QString> argsSkyptOff = {"from="+oCube.fileName(),
-                           "format=pvl",
-                           "type=image", 
-                           "sample=100.0", 
-                           "line=100.0"};                
-  UserInterface optionsSkyptOff(APP_XML1, argsSkyptOff); 
-  Pvl appLogOff;
-  skypt(&oCube, optionsSkyptOff, &appLogOff);
-  PvlGroup skyPointOff = appLogOff.findGroup("SkyPoint");
+  
+  // Call Skypt on an off-body sky pixel and check for a Null pixel value.
+  QVector<QString> argsSkypt1 = {"from="+noprojCube.fileName(),
+                                 "format=pvl",
+                                 "type=image", 
+                                 "sample=20.0", 
+                                 "line=30.0"};                
+  UserInterface uiSkypt1(APP_XML1, argsSkypt1);
+  Pvl appLogSkypt1;
+  skypt(&noprojCube, uiSkypt1, &appLogSkypt1);
+  PvlGroup skyPoint1 = appLogSkypt1.findGroup("SkyPoint");
 
-  // Off-body pixel is expected to be Null.
-  EXPECT_DOUBLE_EQ( (double) skyPointOff.findKeyword("Sample"), 100.0);
-  EXPECT_DOUBLE_EQ( (double) skyPointOff.findKeyword("Line"), 100.0);
-  EXPECT_NEAR( (double) skyPointOff.findKeyword("RightAscension"), 327.50705984365, 1e-8);
-  EXPECT_NEAR( (double) skyPointOff.findKeyword("Declination"), 1.2533779356437, 1e-8);
-  EXPECT_NEAR( (double) skyPointOff.findKeyword("EphemerisTime"), 597017358.51577, 1e-8);
-  EXPECT_PRED_FORMAT2(AssertQStringsEqual, skyPointOff.findKeyword("PixelValue"), "Null");
-  EXPECT_NEAR( (double) skyPointOff.findKeyword("CelestialNorthClockAngle"), 282.50819767996, 1e-8);
+  EXPECT_DOUBLE_EQ( (double) skyPoint1.findKeyword("Sample"), 20.0);
+  EXPECT_DOUBLE_EQ( (double) skyPoint1.findKeyword("Line"), 30.0);
+  EXPECT_NEAR( (double) skyPoint1.findKeyword("RightAscension"), 181.57392134043, 1e-8);
+  EXPECT_NEAR( (double) skyPoint1.findKeyword("Declination"), -1.7118980812905, 1e-8);
+  EXPECT_NEAR( (double) skyPoint1.findKeyword("EphemerisTime"), 610696049.67661, 1e-8);
+  EXPECT_PRED_FORMAT2(AssertQStringsEqual, skyPoint1.findKeyword("PixelValue"), "Null");
+  EXPECT_NEAR( (double) skyPoint1.findKeyword("CelestialNorthClockAngle"), 239.06702667495, 1e-8);
 
-  // Call Skypt on an on-body pixel and check for valid DN.
-  QVector<QString> argsSkyptOn = {"from="+oCube.fileName(),
-                           "format=pvl",
-                           "type=image", 
-                           "sample=512.0", 
-                           "line=512.0"};                
-  UserInterface optionsSkyptOn(APP_XML1, argsSkyptOn); 
-  Pvl appLogOn;
-  skypt(&oCube, optionsSkyptOn, &appLogOn);
-  PvlGroup skyPointOn = appLogOn.findGroup("SkyPoint");
-
+  // Call Skypt on an off-body pixel and check for a Null pixel value.
+  QVector<QString> argsSkypt2 = {"from="+noprojCube.fileName(),
+                                 "format=pvl",
+                                 "type=image", 
+                                 "sample=100.0", 
+                                 "line=200.0"};                
+  UserInterface uiSkypt2(APP_XML1, argsSkypt2);
+  Pvl appLogSkypt2;
+  skypt(&noprojCube, uiSkypt2, &appLogSkypt2);
+  PvlGroup skyPoint2 = appLogSkypt2.findGroup("SkyPoint");
+ 
   // On-body pixel is expected to be valid.
-  EXPECT_DOUBLE_EQ( (double) skyPointOn.findKeyword("Sample"), 512.0);
-  EXPECT_DOUBLE_EQ( (double) skyPointOn.findKeyword("Line"), 512.0);
-  EXPECT_NEAR( (double) skyPointOn.findKeyword("RightAscension"), 326.28968389699, 1e-8);
-  EXPECT_NEAR( (double) skyPointOn.findKeyword("Declination"), -0.65689737966008, 1e-8);
-  EXPECT_NEAR( (double) skyPointOn.findKeyword("EphemerisTime"), 597017358.51577, 1e-8);
-  EXPECT_NEAR( (double) skyPointOn.findKeyword("PixelValue"), 0.0051794839, 1e-8);
-  EXPECT_NEAR( (double) skyPointOn.findKeyword("CelestialNorthClockAngle"), 282.49290760168, 1e-8);
+  EXPECT_DOUBLE_EQ( (double) skyPoint2.findKeyword("Sample"), 100.0);
+  EXPECT_DOUBLE_EQ( (double) skyPoint2.findKeyword("Line"), 200.0);
+  EXPECT_NEAR( (double) skyPoint2.findKeyword("RightAscension"), 180.84768002386, 1e-8);
+  EXPECT_NEAR( (double) skyPoint2.findKeyword("Declination"), -1.6384132695942, 1e-8);
+  EXPECT_NEAR( (double) skyPoint2.findKeyword("EphemerisTime"), 610696049.67661, 1e-8);
+  EXPECT_PRED_FORMAT2(AssertQStringsEqual, skyPoint2.findKeyword("PixelValue"), "Null");
+  EXPECT_NEAR( (double) skyPoint2.findKeyword("CelestialNorthClockAngle"), 239.03650950112, 1e-8);
+
+ // Call Skypt on an on-body pixel and check for valid pixel value.
+  QVector<QString> argsSkypt3 = {"from="+noprojCube.fileName(),
+                                 "format=pvl",
+                                 "type=image", 
+                                 "sample=500.0", 
+                                 "line=500.0"};                
+  UserInterface uiSkypt3(APP_XML1, argsSkypt3); 
+  Pvl appLogSkypt3;
+  skypt(&noprojCube, uiSkypt3, &appLogSkypt3);
+  PvlGroup skyPoint3 = appLogSkypt3.findGroup("SkyPoint");
+ 
+  // On-body pixel is expected to be valid.
+  EXPECT_DOUBLE_EQ( (double) skyPoint3.findKeyword("Sample"), 500.0);
+  EXPECT_DOUBLE_EQ( (double) skyPoint3.findKeyword("Line"), 500.0);
+  EXPECT_NEAR( (double) skyPoint3.findKeyword("RightAscension"), 179.04568028209, 1e-8);
+  EXPECT_NEAR( (double) skyPoint3.findKeyword("Declination"), -2.3705704590705, 1e-8);
+  EXPECT_NEAR( (double) skyPoint3.findKeyword("EphemerisTime"), 610696049.67661, 1e-8);
+  EXPECT_NEAR( (double) skyPoint3.findKeyword("PixelValue"), 0.030888285, 1e-8);
+  EXPECT_NEAR( (double) skyPoint3.findKeyword("CelestialNorthClockAngle"), 238.96088012888, 1e-8);
 
 }
+
 
 
 /**
    * Test Noproj parameters OFFBODY=FALSE and OFFBODYTRIM=FALSE
-   * Call Skypt to check on- and off-body pixels for valid values or Null.
+   * Call Skypt to check that pixels in noprojed image 
+   * have the expected values (Null or valid). 
    *
    * Input ...
-   *   1) Level 1 cube, spiceinited TagCam cube.
-   * 
+   *   1) From cube, Level 1 cube, spiceinited, cropped MapCam cube.
+   *   2) Match cube, Level 1 cube, spiceinited, cropped MapCam cube.
    * Output ...
-   *    1) Pvl log file from Skypt.
+   *   1) Noproj'ed cube.
+   *   2) Pvl log file from Skypt.
    *
-   * Use Skypt to check if on- and off-body pixels have valid or Null values as expected.
   */
-TEST_F(DefaultCube, FunctionalTestNoprojOffBodyFalseOffBodyTrimFalse) {
+ TEST_F(DefaultCube, FunctionalTestNoprojOffBodyFalseOffBodyTrimFalse) { 
 
-  QString iCubeName = "$ISISROOT/../isis/tests/data/osirisRexImages/20181202T100807S333_map_radL2pan_crop.cub";
-  QString cubeFileName = tempDir.path() + "/output.cub";
-  QVector<QString> args = {"to=" + cubeFileName, "offbody=FALSE", "offbodytrim=FALSE"};
+  QString iCubeName = "$ISISROOT/../isis/tests/data/osirisRexImages/20190509T180552S020_crop.cub";
+  QString mCubeName = "$ISISROOT/../isis/tests/data/osirisRexImages/20190509T174620S424_crop.cub";
+  QString noprojCubeName = tempDir.path() + "/output.cub";
+  QVector<QString> args = {"to=" + noprojCubeName, "offbody=FALSE", "offbodytrim=FALSE"};
 
   Cube iCube;
+  Cube mCube;
   iCube.open(iCubeName);
+  mCube.open(mCubeName);
   
-  // Run noproj with empty match cube input.
+  // Run noproj with match cube specified.
   UserInterface options(APP_XML, args); 
-  noproj(&iCube, NULL, options);
+  noproj(&iCube, &mCube, options);
 
   // Check results of noproj cube.
-  Cube oCube(cubeFileName);
-  Pvl *isisLabel = oCube.label();
+  Cube noprojCube(noprojCubeName);
+  Pvl *isisLabel = noprojCube.label();
   PvlGroup instGroup = isisLabel->findGroup("Instrument", Pvl::Traverse);
   EXPECT_PRED_FORMAT2(AssertQStringsEqual, instGroup.findKeyword("SpacecraftName"), "IdealSpacecraft");
   EXPECT_PRED_FORMAT2(AssertQStringsEqual, instGroup.findKeyword("InstrumentId"), "IdealCamera");
@@ -707,54 +785,75 @@ TEST_F(DefaultCube, FunctionalTestNoprojOffBodyFalseOffBodyTrimFalse) {
   EXPECT_EQ((int) instGroup.findKeyword("SampleDetectors"), 1050);
   EXPECT_EQ((int) instGroup.findKeyword("LineDetectors"), 1050);
   EXPECT_PRED_FORMAT2(AssertQStringsEqual, instGroup.findKeyword("InstrumentType"), "FRAMING");
-  EXPECT_DOUBLE_EQ((double) instGroup.findKeyword("EphemerisTime"), 597017358.51577);
-  EXPECT_PRED_FORMAT2(AssertQStringsEqual, instGroup.findKeyword("StartTime"), "2018-12-02T10:08:07.333");
+  EXPECT_DOUBLE_EQ((double) instGroup.findKeyword("EphemerisTime"), 610696049.67661);
+  EXPECT_PRED_FORMAT2(AssertQStringsEqual, instGroup.findKeyword("StartTime"), "2019-05-09T17:46:20.424");
   EXPECT_EQ((int) instGroup.findKeyword("FocalPlaneXDependency"), 2);
   EXPECT_DOUBLE_EQ((double) instGroup.findKeyword("TransX"), 1.0);
   EXPECT_DOUBLE_EQ((double) instGroup.findKeyword("TransY"), 1.0);
 
-  FileName matchedCubeName(instGroup.findKeyword("matchedCube"));
-  FileName inputCubeName(iCube.fileName());
+  FileName matchedCubeName(instGroup.findKeyword("MatchedCube"));
+  FileName inputCubeName(mCube.fileName());
   EXPECT_PRED_FORMAT2(AssertQStringsEqual, matchedCubeName.name(), inputCubeName.name());
   
-  // Call Skypt on an off-body pixel and check for valid DN.
-  QVector<QString> argsSkyptOff = {"from="+oCube.fileName(),
-                           "format=pvl",
-                           "type=image", 
-                           "sample=100.0", 
-                           "line=100.0"};                
-  UserInterface optionsSkyptOff(APP_XML1, argsSkyptOff); 
-  Pvl appLogOff;
-  skypt(&oCube, optionsSkyptOff, &appLogOff);
-  PvlGroup skyPointOff = appLogOff.findGroup("SkyPoint");
+  
+  // Call Skypt on an off-body sky pixel and check for a Null pixel value.
+  QVector<QString> argsSkypt1 = {"from="+noprojCube.fileName(),
+                                 "format=pvl",
+                                 "type=image", 
+                                 "sample=20.0", 
+                                 "line=30.0"};                
+  UserInterface uiSkypt1(APP_XML1, argsSkypt1);
+  Pvl appLogSkypt1;
+  skypt(&noprojCube, uiSkypt1, &appLogSkypt1);
+  PvlGroup skyPoint1 = appLogSkypt1.findGroup("SkyPoint");
 
-  // Off-body pixel is expected to be Null.
-  EXPECT_DOUBLE_EQ( (double) skyPointOff.findKeyword("Sample"), 100.0);
-  EXPECT_DOUBLE_EQ( (double) skyPointOff.findKeyword("Line"), 100.0);
-  EXPECT_NEAR( (double) skyPointOff.findKeyword("RightAscension"), 327.50705984365, 1e-8);
-  EXPECT_NEAR( (double) skyPointOff.findKeyword("Declination"), 1.2533779356437, 1e-8);
-  EXPECT_NEAR( (double) skyPointOff.findKeyword("EphemerisTime"), 597017358.51577, 1e-8);
-  EXPECT_PRED_FORMAT2(AssertQStringsEqual, skyPointOff.findKeyword("PixelValue"), "Null");
-  EXPECT_NEAR( (double) skyPointOff.findKeyword("CelestialNorthClockAngle"), 282.50819767996, 1e-8);
+  EXPECT_DOUBLE_EQ( (double) skyPoint1.findKeyword("Sample"), 20.0);
+  EXPECT_DOUBLE_EQ( (double) skyPoint1.findKeyword("Line"), 30.0);
+  EXPECT_NEAR( (double) skyPoint1.findKeyword("RightAscension"), 181.57392134043, 1e-8);
+  EXPECT_NEAR( (double) skyPoint1.findKeyword("Declination"), -1.7118980812905, 1e-8);
+  EXPECT_NEAR( (double) skyPoint1.findKeyword("EphemerisTime"), 610696049.67661, 1e-8);
+  EXPECT_PRED_FORMAT2(AssertQStringsEqual, skyPoint1.findKeyword("PixelValue"), "Null");
+  EXPECT_NEAR( (double) skyPoint1.findKeyword("CelestialNorthClockAngle"), 239.06702667495, 1e-8);
 
-  // Call Skypt on an on-body pixel and check for valid DN.
-  QVector<QString> argsSkyptOn = {"from="+oCube.fileName(),
-                           "format=pvl",
-                           "type=image", 
-                           "sample=512.0", 
-                           "line=512.0"};                
-  UserInterface optionsSkyptOn(APP_XML1, argsSkyptOn); 
-  Pvl appLogOn;
-  skypt(&oCube, optionsSkyptOn, &appLogOn);
-  PvlGroup skyPointOn = appLogOn.findGroup("SkyPoint");
+  // Call Skypt on an off-body pixel and check for a Null pixel value.
+  QVector<QString> argsSkypt2 = {"from="+noprojCube.fileName(),
+                                 "format=pvl",
+                                 "type=image", 
+                                 "sample=100.0", 
+                                 "line=200.0"};                
+  UserInterface uiSkypt2(APP_XML1, argsSkypt2);
+  Pvl appLogSkypt2;
+  skypt(&noprojCube, uiSkypt2, &appLogSkypt2);
+  PvlGroup skyPoint2 = appLogSkypt2.findGroup("SkyPoint");
  
   // On-body pixel is expected to be valid.
-  EXPECT_DOUBLE_EQ( (double) skyPointOn.findKeyword("Sample"), 512.0);
-  EXPECT_DOUBLE_EQ( (double) skyPointOn.findKeyword("Line"), 512.0);
-  EXPECT_NEAR( (double) skyPointOn.findKeyword("RightAscension"), 326.28968389699, 1e-8);
-  EXPECT_NEAR( (double) skyPointOn.findKeyword("Declination"), -0.65689737966008, 1e-8);
-  EXPECT_NEAR( (double) skyPointOn.findKeyword("EphemerisTime"), 597017358.51577, 1e-8);
-  EXPECT_NEAR( (double) skyPointOn.findKeyword("PixelValue"), 0.0051794839, 1e-8);
-  EXPECT_NEAR( (double) skyPointOn.findKeyword("CelestialNorthClockAngle"), 282.49290760168, 1e-8);
+  EXPECT_DOUBLE_EQ( (double) skyPoint2.findKeyword("Sample"), 100.0);
+  EXPECT_DOUBLE_EQ( (double) skyPoint2.findKeyword("Line"), 200.0);
+  EXPECT_NEAR( (double) skyPoint2.findKeyword("RightAscension"), 180.84768002386, 1e-8);
+  EXPECT_NEAR( (double) skyPoint2.findKeyword("Declination"), -1.6384132695942, 1e-8);
+  EXPECT_NEAR( (double) skyPoint2.findKeyword("EphemerisTime"), 610696049.67661, 1e-8);
+  EXPECT_PRED_FORMAT2(AssertQStringsEqual, skyPoint2.findKeyword("PixelValue"), "Null");
+  EXPECT_NEAR( (double) skyPoint2.findKeyword("CelestialNorthClockAngle"), 239.03650950112, 1e-8);
+
+ // Call Skypt on an on-body pixel and check for valid pixel value.
+  QVector<QString> argsSkypt3 = {"from="+noprojCube.fileName(),
+                                 "format=pvl",
+                                 "type=image", 
+                                 "sample=500.0", 
+                                 "line=500.0"};                
+  UserInterface uiSkypt3(APP_XML1, argsSkypt3); 
+  Pvl appLogSkypt3;
+  skypt(&noprojCube, uiSkypt3, &appLogSkypt3);
+  PvlGroup skyPoint3 = appLogSkypt3.findGroup("SkyPoint");
+ 
+  // On-body pixel is expected to be valid.
+  EXPECT_DOUBLE_EQ( (double) skyPoint3.findKeyword("Sample"), 500.0);
+  EXPECT_DOUBLE_EQ( (double) skyPoint3.findKeyword("Line"), 500.0);
+  EXPECT_NEAR( (double) skyPoint3.findKeyword("RightAscension"), 179.04568028209, 1e-8);
+  EXPECT_NEAR( (double) skyPoint3.findKeyword("Declination"), -2.3705704590705, 1e-8);
+  EXPECT_NEAR( (double) skyPoint3.findKeyword("EphemerisTime"), 610696049.67661, 1e-8);
+  EXPECT_NEAR( (double) skyPoint3.findKeyword("PixelValue"), 0.030888285, 1e-8);
+  EXPECT_NEAR( (double) skyPoint3.findKeyword("CelestialNorthClockAngle"), 238.96088012888, 1e-8);
 
 }
+
