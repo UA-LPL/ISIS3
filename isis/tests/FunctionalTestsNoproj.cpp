@@ -1,16 +1,11 @@
 #include "noproj.h"
 
 #include <QTextStream>
-#include <iostream>			// for debugging 
-
 #include "CameraFixtures.h"
 #include "Histogram.h"
 #include "LineManager.h"
 #include "PvlGroup.h"
 #include "TestUtilities.h"
-#include "History.h"
-#include "Blob.h"
-#include "PvlObject.h"
 #include "skypt.h"
 
 #include "gmock/gmock.h"
