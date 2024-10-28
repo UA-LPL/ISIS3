@@ -113,6 +113,10 @@
 	   of 1/16/2019 and 1/28/2019 from UofA codebase to Astrogeology.	Added
      examples and updated documentation.
     </change>
+    <change name="Kris Becker" date="2024-10-28">
+      OFFBODYTRIM should default to true for proper behavior. Added a 
+      standalone mapper algorithm to more easily tests these changes.
+    </change>
   </history>
 
   <oldName>
@@ -326,9 +330,8 @@ End
 dtype="map_iofL2b"
 fbase="20190509T180552S020"
 
-# Download the OSIRIS-REx image. Note wget can be installed using the command
-# "conda install wget"
-wget -P . "https://sbnarchive.psi.edu/pds4/orex/orex.ocams/data_calibrated/detailed_survey/${fbase}_${dtype}.fits"
+# Download the OSIRIS-REx image.
+curl "https://sbnarchive.psi.edu/pds4/orex/orex.ocams/data_calibrated/detailed_survey/${fbase}_${dtype}.fits" -o "${fbase}_${dtype}.fit"
 
 # Import into ISIS
 ocams2isis from="${fbase}_${dtype}.fits" to="${fbase}_pck.cub"

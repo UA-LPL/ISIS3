@@ -102,28 +102,29 @@ namespace Isis {
 
     // Set up the transform object which will simply map
     // output line/samps -> output lat/lons -> input line/samps
-    Transform *transform = new cam2camXform(icube->sampleCount(),
-                                            icube->lineCount(),
-                                            cam2camGlobal::incam,
-                                            ocube->sampleCount(),
-                                            ocube->lineCount(),
-                                            outcam,
-                                            offbody,
-                                            trim);
+    std::unique_ptr<Transform> transform( new cam2camXform( icube->sampleCount(),
+                                                            icube->lineCount(),
+                                                            cam2camGlobal::incam,
+                                                            ocube->sampleCount(),
+                                                            ocube->lineCount(),
+                                                            outcam,
+                                                            offbody,
+                                                            trim) );
+    
 
     // Add the reference band to the output if necessary
     ocube->putGroup(instgrp);
 
     // Set up the interpolator
-    Interpolator *interp = NULL;
+    std::unique_ptr<Interpolator> interp;
     if (ui.GetString("INTERP") == "NEARESTNEIGHBOR") {
-      interp = new Interpolator(Interpolator::NearestNeighborType);
+      interp.reset( new Interpolator(Interpolator::NearestNeighborType) );
     }
     else if (ui.GetString("INTERP") == "BILINEAR") {
-      interp = new Interpolator(Interpolator::BiLinearType);
+      interp.reset( new Interpolator(Interpolator::BiLinearType) );
     }
     else if (ui.GetString("INTERP") == "CUBICCONVOLUTION") {
-      interp = new Interpolator(Interpolator::CubicConvolutionType);
+      interp.reset( new Interpolator(Interpolator::CubicConvolutionType) );
     }
 
     // See if we need to deal with band dependent camera models
@@ -135,9 +136,6 @@ namespace Isis {
     m.StartProcess(*transform, *interp);
     m.EndProcess();
 
-    // Cleanup
-    delete transform;
-    delete interp;
   }
 
 
