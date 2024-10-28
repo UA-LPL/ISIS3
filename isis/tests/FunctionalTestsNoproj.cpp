@@ -419,8 +419,8 @@ TEST_F(LineScannerCube, FunctionalTestNoprojLineScanner) {
   */
 TEST_F(DefaultCube, FunctionalTestNoprojOffBodyTrueOffBodyTrimFalse) { 
 
-  QString iCubeName = "$ISISROOT/../isis/tests/data/osirisRexImages/20190509T180552S020_crop.cub";
-  QString mCubeName = "$ISISROOT/../isis/tests/data/osirisRexImages/20190509T174620S424_crop.cub";
+  QString iCubeName = "data/osirisRexImages/20190509T180552S020_crop.cub";
+  QString mCubeName = "data/osirisRexImages/20190509T174620S424_crop.cub";
   QString noprojCubeName = tempDir.path() + "/output.cub";
   QVector<QString> args = {"to=" + noprojCubeName, "offbody=TRUE", "offbodytrim=FALSE"};
 
@@ -530,8 +530,8 @@ TEST_F(DefaultCube, FunctionalTestNoprojOffBodyTrueOffBodyTrimFalse) {
 */
 TEST_F(DefaultCube, FunctionalTestNoprojOffBodyTrueOffBodyTrimTrue) { 
 
-  QString iCubeName = "$ISISROOT/../isis/tests/data/osirisRexImages/20190509T180552S020_crop.cub";
-  QString mCubeName = "$ISISROOT/../isis/tests/data/osirisRexImages/20190509T174620S424_crop.cub";
+  QString iCubeName = "data/osirisRexImages/20190509T180552S020_crop.cub";
+  QString mCubeName = "data/osirisRexImages/20190509T174620S424_crop.cub";
   QString noprojCubeName = tempDir.path() + "/output.cub";
   QVector<QString> args = {"to=" + noprojCubeName, "offbody=TRUE", "offbodytrim=TRUE"};
 
@@ -643,8 +643,8 @@ TEST_F(DefaultCube, FunctionalTestNoprojOffBodyTrueOffBodyTrimTrue) {
   */
  TEST_F(DefaultCube, FunctionalTestNoprojOffBodyFalseOffBodyTrimTrue) { 
 
-  QString iCubeName = "$ISISROOT/../isis/tests/data/osirisRexImages/20190509T180552S020_crop.cub";
-  QString mCubeName = "$ISISROOT/../isis/tests/data/osirisRexImages/20190509T174620S424_crop.cub";
+  QString iCubeName = "data/osirisRexImages/20190509T180552S020_crop.cub";
+  QString mCubeName = "data/osirisRexImages/20190509T174620S424_crop.cub";
   QString noprojCubeName = tempDir.path() + "/output.cub";
   QVector<QString> args = {"to=" + noprojCubeName, "offbody=FALSE", "offbodytrim=TRUE"};
 
@@ -756,8 +756,8 @@ TEST_F(DefaultCube, FunctionalTestNoprojOffBodyTrueOffBodyTrimTrue) {
   */
  TEST_F(DefaultCube, FunctionalTestNoprojOffBodyFalseOffBodyTrimFalse) { 
 
-  QString iCubeName = "$ISISROOT/../isis/tests/data/osirisRexImages/20190509T180552S020_crop.cub";
-  QString mCubeName = "$ISISROOT/../isis/tests/data/osirisRexImages/20190509T174620S424_crop.cub";
+  QString iCubeName = "data/osirisRexImages/20190509T180552S020_crop.cub";
+  QString mCubeName = "data/osirisRexImages/20190509T174620S424_crop.cub";
   QString noprojCubeName = tempDir.path() + "/output.cub";
   QVector<QString> args = {"to=" + noprojCubeName, "offbody=FALSE", "offbodytrim=FALSE"};
 
