@@ -36,22 +36,48 @@ release.
 ## [Unreleased]
 
 ### Added
+
+### Changed
+
+### Fixed
+- Fixed kaguyatc2isis invalid BandBin values [#5629](https://github.com/DOI-USGS/ISIS3/issues/5629)
+- Fixed SpiceClient to handle redirect requests.
+- Fixed jigsaw to default OUTADJUSTMENTH5 option to false and allow this feature to run on read-only images [#5700](https://github.com/DOI-USGS/ISIS3/issues/5700)
+- Fixed Cube::fromIsd to add "LineScanTimes" table from HRSC isds [#5668](https://github.com/DOI-USGS/ISIS3/issues/5668)
+
+## [9.0.0] - 09-25-2024
+
+### Added
 - Added TOVECT output parameter which generate a geospatial CSV file with a VRT metadata sidecar file [#5571](https://github.com/DOI-USGS/ISIS3/issues/5571)  
 - Added Vectorize to ProcessGroundPolygon library
 - Added gtest files for the app and unit test 
 - Added Chandrayaan2 template for isisimport
+- Added majority replacement for reduce app [#5101](https://github.com/DOI-USGS/ISIS3/issues/5101).
+- Added HRSC support in socetlinescankeywords [#5465](https://github.com/DOI-USGS/ISIS3/issues/5465)
+- Added option to save and apply bundle adjustment values in `jigsaw` [#4474](https://github.com/DOI-USGS/ISIS3/issues/4474)
+- Added the ability to pass column types in csv2table to set the column types in the resulting ISIS table [#5631](https://github.com/DOI-USGS/ISIS3/pull/5631)
 
-### Changed
+### Changed
 - Refactored the pixel2map app
 - Updated pixel2map documentation
+- Changed PVL parsing to no longer allow valueless keywords [#5573](https://github.com/DOI-USGS/ISIS3/pull/5573)
+- Changed all `.trn` files with an `Auto`, `Debug` or `Optional` keyword with no value to have a value of `1` [#5573](https://github.com/DOI-USGS/ISIS3/pull/5573)
+- Changed 'User Parameters' group in camstats to UserParameters for PVL compliance [#5625](https://github.com/DOI-USGS/ISIS3/issues/5625).
 
 ### Fixed
+- Fixed bug in the method BundleSolutionInfo::outputPointsCSV() where, when performing a rectangular (XYZ) bundle adjustment, the Lat/Lon/Radius point corrections written to points.csv are incorrect and do not match those written to bundleout.txt. Also modified the ctest FunctionalTestJigsawBundleXYZ to spot check six lines (points) in points.csv.
+Issue: [5646](https://github.com/DOI-USGS/ISIS3/issues/5646)
+- Fixed noseam bug where a debugging output statement was inadvertently left in noseam.cpp.
+Issue: [5660](https://github.com/DOI-USGS/ISIS3/issues/5660)
 - Fixed jigsaw bugs in which RADIUS is handled incorrectly in the jigsaw gui and in the bundleout.txt
 file. Slightly modified the FunctionalTestJigsawBundleXYZ ctest accordingly. Issue: [5642](https://github.com/DOI-USGS/ISIS3/issues/5642)
 - Fixed a bug in isisminer in which bad (e.g. self-intersecting) polygon geometries were not treated properly. Added pertinent unit tests to GisGeometry and Strategy classes. Issue: [5612](https://github.com/DOI-USGS/ISIS3/issues/5612)
 - Fixed a bug in kaguyasp2isis that doesn't work for data with a detached label.
 - Fixed FunctionalTestCamstatsDefaultParameters test by increasing the runtime speed [#5459](https://github.com/DOI-USGS/ISIS3/issues/5459)
 - Fixed XmlToJson namespaced key conversion [#5652](https://github.com/DOI-USGS/ISIS3/pull/5652)
+- Fixed PHOTOMET not accepting backplanes [#5281](https://github.com/DOI-USGS/ISIS3/issues/5281)
+- Fixed dstripe parallel test failing by converting tests to gtests [#5613](https://github.com/DOI-USGS/ISIS3/issues/5613)
+- Fixed autoseed SeedDomain = SampleLine only working for first overlap [#5673](https://github.com/DOI-USGS/ISIS3/issues/5673)
 
 ## [8.3.0] - 2024-09-30
 
@@ -85,7 +111,6 @@ file. Slightly modified the FunctionalTestJigsawBundleXYZ ctest accordingly. Iss
 - Fixed gllssi2isis to support V1.1 data [#5396](https://github.com/DOI-USGS/ISIS3/issues/5396)
 
 ### Added
-- Added option to save and apply bundle adjustment values in `jigsaw` [#4474](https://github.com/DOI-USGS/ISIS3/issues/4474)
 - Added versioned default values to lrowacphomap's PHOALGO and PHOPARCUBE parameters and updated lrowacphomap to handle them properly. [#5452](https://github.com/DOI-USGS/ISIS3/pull/5452)
 - Added input parameters OFFBODY and OFFBODYTRIM to noproj and cam2cam. [#3602](https://github.com/DOI-USGS/ISIS3/issues/3602) 
 
