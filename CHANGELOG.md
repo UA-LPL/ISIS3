@@ -36,6 +36,9 @@ release.
 ## [Unreleased]
 
 ### Added
+- Added adjusted XYZ point coordinate sigmas to the points.csv jigsaw output file. Modified
+ctest FunctionalTestJigsawApollo to validate this output. [#5710](https://github.com/DOI-USGS/ISIS3/issues/5710)
+- Added OFFBODY and OFFBODYTRIM parameters to cam2cam. Added tests and updated documentation. [#3602] (https://github.com/DOI-USGS/ISIS3/issues/3602)
 
 ### Changed
 - Update OSIRIS-REx OCams instrument (Map, Poly, & SamCam) support to current state in UofA code base [#5426](https://github.com/DOI-USGS/ISIS3/issues/5426)
