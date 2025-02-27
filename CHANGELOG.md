@@ -39,15 +39,18 @@ release.
 - Added adjusted XYZ point coordinate sigmas to the points.csv jigsaw output file. Modified
 ctest FunctionalTestJigsawApollo to validate this output. [#5710](https://github.com/DOI-USGS/ISIS3/issues/5710)
 - Added OFFBODY and OFFBODYTRIM parameters to cam2cam. Added tests and updated documentation. [#3602] (https://github.com/DOI-USGS/ISIS3/issues/3602)
+- Added support for reading, writing, and viewing GeoTIFFs in ISIS. [#5618](https://github.com/DOI-USGS/ISIS3/pull/5618)
 
 ### Changed
 - Update OSIRIS-REx OCams instrument (Map, Poly, & SamCam) support to current state in UofA code base [#5426](https://github.com/DOI-USGS/ISIS3/issues/5426)
+- Enhanced csminit by removing the need to specify model and plugin [#5585](https://github.com/DOI-USGS/ISIS3/issues/5585)
 
 ### Fixed
 - Fixed kaguyatc2isis invalid BandBin values [#5629](https://github.com/DOI-USGS/ISIS3/issues/5629)
 - Fixed SpiceClient to handle redirect requests.
 - Fixed jigsaw to default OUTADJUSTMENTH5 option to false and allow this feature to run on read-only images [#5700](https://github.com/DOI-USGS/ISIS3/issues/5700)
 - Fixed Cube::fromIsd to add "LineScanTimes" table from HRSC isds [#5668](https://github.com/DOI-USGS/ISIS3/issues/5668)
+- Fixed segfault in SpiceClient when an authentication error was encountered. [#5735](https://github.com/DOI-USGS/ISIS3/pull/5735)
 
 ## [9.0.0] - 09-25-2024
 
