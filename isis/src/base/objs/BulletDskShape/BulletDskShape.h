@@ -18,10 +18,15 @@ namespace Isis {
 
 /**
  * Bullet Target Shape for NAIF type 2 DSK models
- *
+ * 
+ * This implementation allows for 
+ * 
  * @author 2017-03-17 Kris Becker
  * @internal
  *   @history 2017-03-17  Kris Becker  Original Version
+ *   @history 2025-04-04 Kris Becker - Updated to use the Bullet package as provided from
+ *                         it original distribution. This eliminates the need for the USGS
+ *                         maintaining a special version.
  */
   class BulletDskShape : public BulletTargetShape {
     public:
