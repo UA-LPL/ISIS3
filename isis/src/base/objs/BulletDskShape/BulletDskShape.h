@@ -22,6 +22,10 @@ namespace Isis {
  * @author 2017-03-17 Kris Becker
  * @internal
  *   @history 2017-03-17  Kris Becker  Original Version
+ *   @history 2025-04-17 Kris Becker - Modified for bullet >= 3.25 and
+ *                          configure to use conda-forge bullet feedstock
+ *                          library Float64 double precision build. See Issues
+ *                           #5100.
  */
   class BulletDskShape : public BulletTargetShape {
     public:

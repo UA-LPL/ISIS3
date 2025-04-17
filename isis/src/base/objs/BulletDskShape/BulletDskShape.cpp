@@ -24,6 +24,10 @@ find files of those names at the top level of this repository. **/
 #include "NaifDskPlateModel.h"
 #include "NaifStatus.h"
 
+#include <QStringList>
+
+// #define DSK_DEBUG 1
+
 using namespace std;
 
 namespace Isis {
@@ -189,11 +193,71 @@ namespace Isis {
     segments.push_back(segment);
 
     // Iterate until you find no more segments.
+
+  #if defined(DSK_DEBUG)
+    std::cout << "Maximum Bullet Parts:   " << bt_MaxBodyParts() << std::endl;
+    std::cout << "Maximum Triangles/Part: " << bt_MaxTriangles() << std::endl;
+  #endif
+
+    // Do realtime validation. DSK limits triangles to 32M and vertices to ~16M vectors
+    // so ensure each segment shape can fit in a single Bullet part.  See
+    // https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/dsk.html#Appendix%20B%20---%20DSK%20Subsystem%20Limits
+    //
+    // Bullet limits are currently set at 16 parts and 134,217,728 triangles. Thus,
+    // all segment shapes should fit in a single segment so supported DSKs cannot
+    // have more than 16 segments.
+    //
+    // See https://github.com/bulletphysics/bullet3/blob/master/src/BulletCollision/BroadphaseCollision/btQuantizedBvh.h
+    SpiceInt max_bt_parts    = bt_MaxBodyParts();
+    SpiceInt max_bt_triangles = bt_MaxTriangles();
+    SpiceInt nparts_required = 0;
+    QStringList segment_errors;
+
     while(found) {
+
+      // Validate last segment found before searching for the next segment
+      SpiceInt s_plates;
+      SpiceInt s_vertices;
+      dskz02_c( handle, &segment, &s_vertices, &s_plates);
+      NaifStatus::CheckErrors();
+
+#if defined(DSK_DEBUG)
+      std::cout << "\nSegment:   " << segments.size() << std::endl;
+      std::cout << "#Vertices: " << s_vertices << std::endl;
+      std::cout << "#Plates:   " << s_plates << std::endl;
+#endif
+
+      if ( s_plates > max_bt_triangles ) {
+        QString mess = "Segment " + toString( (int) (segments.size()-1) ) + " number triangles ("
+                      + toString(s_plates) + ") exceeds Bullet maximum of " + toString( max_bt_triangles);
+        segment_errors.push_back( mess );
+      }
+
+      // Determine how many parts is required to store this segment (restricted to 1!)
+      size_t s_parts = (s_plates + max_bt_triangles - 1) / max_bt_triangles;
+      nparts_required += s_parts; 
+
+      // Search for the next segment and save it - will be validated in the next loop (above)
       dlafns_c(handle, &segments.back(), &segment, &found);
       NaifStatus::CheckErrors();
-      if (found)
+
+      // Get the next segment
+      if (found) {
         segments.push_back(segment);
+      }
+    }
+
+    // Check for maximum parts exceeded
+    if ( nparts_required > max_bt_parts ) {
+      QString mess = "DSK segment count/required parts (" + toString( nparts_required ) + 
+                     ") exceed Bullet maximum (" + toString( max_bt_parts ) + ")";   
+      segment_errors.push_back( mess );
+    }
+
+    // Report any errors and throw exception
+    if ( segment_errors.size() > 0 ) {
+      QString errors = segment_errors.join( "\n" );
+      throw IException(IException::User, errors, _FILEINFO_);      
     }
 
     // dskgd_c( v_handle, &v_dladsc, &v_dskdsc );
