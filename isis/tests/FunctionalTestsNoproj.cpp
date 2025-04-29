@@ -467,11 +467,11 @@ TEST_F(DefaultCube, FunctionalTestNoprojOffBodyTrueOffBodyTrimFalse) {
 
   EXPECT_DOUBLE_EQ( (double) skyPoint1.findKeyword("Sample"), 20.0);
   EXPECT_DOUBLE_EQ( (double) skyPoint1.findKeyword("Line"), 30.0);
-  EXPECT_NEAR( (double) skyPoint1.findKeyword("RightAscension"), 181.57392134043, 1e-8);
-  EXPECT_NEAR( (double) skyPoint1.findKeyword("Declination"), -1.7118980812905, 1e-8);
+  EXPECT_NEAR( (double) skyPoint1.findKeyword("RightAscension"), 181.5703153396, 1e-8);
+  EXPECT_NEAR( (double) skyPoint1.findKeyword("Declination"), -1.712838512527, 1e-8);
   EXPECT_NEAR( (double) skyPoint1.findKeyword("EphemerisTime"), 610696049.67661, 1e-8);
-  EXPECT_NEAR( (double) skyPoint1.findKeyword("PixelValue"), 0.00028321485, 1e-8);
-  EXPECT_NEAR( (double) skyPoint1.findKeyword("CelestialNorthClockAngle"), 239.06702667495, 1e-8);
+  EXPECT_NEAR( (double) skyPoint1.findKeyword("PixelValue"), 0.00034996954, 1e-8);
+  EXPECT_NEAR( (double) skyPoint1.findKeyword("CelestialNorthClockAngle"), 239.06687506777, 1e-8);
 
   // Call Skypt on an off-body pixel and check for valid pixel value.
   QVector<QString> argsSkypt2 = {"from="+noprojCube.fileName(),
@@ -487,11 +487,11 @@ TEST_F(DefaultCube, FunctionalTestNoprojOffBodyTrueOffBodyTrimFalse) {
   // On-body pixel is expected to be valid.
   EXPECT_DOUBLE_EQ( (double) skyPoint2.findKeyword("Sample"), 100.0);
   EXPECT_DOUBLE_EQ( (double) skyPoint2.findKeyword("Line"), 200.0);
-  EXPECT_NEAR( (double) skyPoint2.findKeyword("RightAscension"), 180.84768002386, 1e-8);
-  EXPECT_NEAR( (double) skyPoint2.findKeyword("Declination"), -1.6384132695942, 1e-8);
+  EXPECT_NEAR( (double) skyPoint2.findKeyword("RightAscension"), 180.84505524757, 1e-8);
+  EXPECT_NEAR( (double) skyPoint2.findKeyword("Declination"), -1.6394524986874, 1e-8);
   EXPECT_NEAR( (double) skyPoint2.findKeyword("EphemerisTime"), 610696049.67661, 1e-8);
-  EXPECT_NEAR( (double) skyPoint2.findKeyword("PixelValue"), 0.0258494, 1e-8);
-  EXPECT_NEAR( (double) skyPoint2.findKeyword("CelestialNorthClockAngle"), 239.03650950112, 1e-8);
+  EXPECT_NEAR( (double) skyPoint2.findKeyword("PixelValue"), 0.027573904, 1e-8);
+  EXPECT_NEAR( (double) skyPoint2.findKeyword("CelestialNorthClockAngle"), 239.03639925925, 1e-8);
 
  // Call Skypt on an on-body pixel and check for valid pixel value.
   QVector<QString> argsSkypt3 = {"from="+noprojCube.fileName(),
@@ -507,11 +507,11 @@ TEST_F(DefaultCube, FunctionalTestNoprojOffBodyTrueOffBodyTrimFalse) {
   // On-body pixel is expected to be valid.
   EXPECT_DOUBLE_EQ( (double) skyPoint3.findKeyword("Sample"), 500.0);
   EXPECT_DOUBLE_EQ( (double) skyPoint3.findKeyword("Line"), 500.0);
-  EXPECT_NEAR( (double) skyPoint3.findKeyword("RightAscension"), 179.04568028209, 1e-8);
-  EXPECT_NEAR( (double) skyPoint3.findKeyword("Declination"), -2.3705704590705, 1e-8);
+  EXPECT_NEAR( (double) skyPoint3.findKeyword("RightAscension"), 179.04549552762, 1e-8);
+  EXPECT_NEAR( (double) skyPoint3.findKeyword("Declination"), -2.370616350112, 1e-8);
   EXPECT_NEAR( (double) skyPoint3.findKeyword("EphemerisTime"), 610696049.67661, 1e-8);
-  EXPECT_NEAR( (double) skyPoint3.findKeyword("PixelValue"), 0.030888285, 1e-8);
-  EXPECT_NEAR( (double) skyPoint3.findKeyword("CelestialNorthClockAngle"), 238.96088012888, 1e-8);
+  EXPECT_NEAR( (double) skyPoint3.findKeyword("PixelValue"), 0.030219724, 1e-8);
+  EXPECT_NEAR( (double) skyPoint3.findKeyword("CelestialNorthClockAngle"), 238.96087237795, 1e-8);
 
 }
 
@@ -578,11 +578,11 @@ TEST_F(DefaultCube, FunctionalTestNoprojOffBodyTrueOffBodyTrimTrue) {
 
   EXPECT_DOUBLE_EQ( (double) skyPoint1.findKeyword("Sample"), 20.0);
   EXPECT_DOUBLE_EQ( (double) skyPoint1.findKeyword("Line"), 30.0);
-  EXPECT_NEAR( (double) skyPoint1.findKeyword("RightAscension"), 181.57392134043, 1e-8);
-  EXPECT_NEAR( (double) skyPoint1.findKeyword("Declination"), -1.7118980812905, 1e-8);
+  EXPECT_NEAR( (double) skyPoint1.findKeyword("RightAscension"), 181.5703153396, 1e-8);
+  EXPECT_NEAR( (double) skyPoint1.findKeyword("Declination"), -1.712838512527, 1e-8);
   EXPECT_NEAR( (double) skyPoint1.findKeyword("EphemerisTime"), 610696049.67661, 1e-8);
-  EXPECT_NEAR( (double) skyPoint1.findKeyword("PixelValue"), 0.00028321485, 1e-8);
-  EXPECT_NEAR( (double) skyPoint1.findKeyword("CelestialNorthClockAngle"), 239.06702667495, 1e-8);
+  EXPECT_NEAR( (double) skyPoint1.findKeyword("PixelValue"), 0.00034996954, 1e-8);
+  EXPECT_NEAR( (double) skyPoint1.findKeyword("CelestialNorthClockAngle"), 239.06687506777001, 1e-8);
 
   // Call Skypt on an off-body pixel and check for a Null pixel value.
   QVector<QString> argsSkypt2 = {"from="+noprojCube.fileName(),
@@ -598,11 +598,11 @@ TEST_F(DefaultCube, FunctionalTestNoprojOffBodyTrueOffBodyTrimTrue) {
   // On-body pixel is expected to be valid.
   EXPECT_DOUBLE_EQ( (double) skyPoint2.findKeyword("Sample"), 100.0);
   EXPECT_DOUBLE_EQ( (double) skyPoint2.findKeyword("Line"), 200.0);
-  EXPECT_NEAR( (double) skyPoint2.findKeyword("RightAscension"), 180.84768002386, 1e-8);
-  EXPECT_NEAR( (double) skyPoint2.findKeyword("Declination"), -1.6384132695942, 1e-8);
+  EXPECT_NEAR( (double) skyPoint2.findKeyword("RightAscension"), 180.84505524757, 1e-8);
+  EXPECT_NEAR( (double) skyPoint2.findKeyword("Declination"), -1.6394524986874, 1e-8);
   EXPECT_NEAR( (double) skyPoint2.findKeyword("EphemerisTime"), 610696049.67661, 1e-8);
   EXPECT_PRED_FORMAT2(AssertQStringsEqual, skyPoint2.findKeyword("PixelValue"), "Null");
-  EXPECT_NEAR( (double) skyPoint2.findKeyword("CelestialNorthClockAngle"), 239.03650950112, 1e-8);
+  EXPECT_NEAR( (double) skyPoint2.findKeyword("CelestialNorthClockAngle"), 239.03639925925, 1e-8);
 
  // Call Skypt on an on-body pixel and check for valid pixel value.
   QVector<QString> argsSkypt3 = {"from="+noprojCube.fileName(),
@@ -618,11 +618,11 @@ TEST_F(DefaultCube, FunctionalTestNoprojOffBodyTrueOffBodyTrimTrue) {
   // On-body pixel is expected to be valid.
   EXPECT_DOUBLE_EQ( (double) skyPoint3.findKeyword("Sample"), 500.0);
   EXPECT_DOUBLE_EQ( (double) skyPoint3.findKeyword("Line"), 500.0);
-  EXPECT_NEAR( (double) skyPoint3.findKeyword("RightAscension"), 179.04568028209, 1e-8);
-  EXPECT_NEAR( (double) skyPoint3.findKeyword("Declination"), -2.3705704590705, 1e-8);
+  EXPECT_NEAR( (double) skyPoint3.findKeyword("RightAscension"), 179.04549552762, 1e-8);
+  EXPECT_NEAR( (double) skyPoint3.findKeyword("Declination"), -2.370616350111, 1e-8);
   EXPECT_NEAR( (double) skyPoint3.findKeyword("EphemerisTime"), 610696049.67661, 1e-8);
-  EXPECT_NEAR( (double) skyPoint3.findKeyword("PixelValue"), 0.030888285, 1e-8);
-  EXPECT_NEAR( (double) skyPoint3.findKeyword("CelestialNorthClockAngle"), 238.96088012888, 1e-8);
+  EXPECT_NEAR( (double) skyPoint3.findKeyword("PixelValue"), 0.030219724, 1e-8);
+  EXPECT_NEAR( (double) skyPoint3.findKeyword("CelestialNorthClockAngle"), 238.96087237795, 1e-8);
 
 }
 
@@ -691,11 +691,11 @@ TEST_F(DefaultCube, FunctionalTestNoprojOffBodyTrueOffBodyTrimTrue) {
 
   EXPECT_DOUBLE_EQ( (double) skyPoint1.findKeyword("Sample"), 20.0);
   EXPECT_DOUBLE_EQ( (double) skyPoint1.findKeyword("Line"), 30.0);
-  EXPECT_NEAR( (double) skyPoint1.findKeyword("RightAscension"), 181.57392134043, 1e-8);
-  EXPECT_NEAR( (double) skyPoint1.findKeyword("Declination"), -1.7118980812905, 1e-8);
+  EXPECT_NEAR( (double) skyPoint1.findKeyword("RightAscension"), 181.5703153396, 1e-8);
+  EXPECT_NEAR( (double) skyPoint1.findKeyword("Declination"), -1.712838512527, 1e-8);
   EXPECT_NEAR( (double) skyPoint1.findKeyword("EphemerisTime"), 610696049.67661, 1e-8);
   EXPECT_PRED_FORMAT2(AssertQStringsEqual, skyPoint1.findKeyword("PixelValue"), "Null");
-  EXPECT_NEAR( (double) skyPoint1.findKeyword("CelestialNorthClockAngle"), 239.06702667495, 1e-8);
+  EXPECT_NEAR( (double) skyPoint1.findKeyword("CelestialNorthClockAngle"), 239.06687506777, 1e-8);
 
   // Call Skypt on an off-body pixel and check for a Null pixel value.
   QVector<QString> argsSkypt2 = {"from="+noprojCube.fileName(),
@@ -711,11 +711,11 @@ TEST_F(DefaultCube, FunctionalTestNoprojOffBodyTrueOffBodyTrimTrue) {
   // On-body pixel is expected to be valid.
   EXPECT_DOUBLE_EQ( (double) skyPoint2.findKeyword("Sample"), 100.0);
   EXPECT_DOUBLE_EQ( (double) skyPoint2.findKeyword("Line"), 200.0);
-  EXPECT_NEAR( (double) skyPoint2.findKeyword("RightAscension"), 180.84768002386, 1e-8);
-  EXPECT_NEAR( (double) skyPoint2.findKeyword("Declination"), -1.6384132695942, 1e-8);
+  EXPECT_NEAR( (double) skyPoint2.findKeyword("RightAscension"), 180.84505524757, 1e-8);
+  EXPECT_NEAR( (double) skyPoint2.findKeyword("Declination"), -1.639452498687, 1e-8);
   EXPECT_NEAR( (double) skyPoint2.findKeyword("EphemerisTime"), 610696049.67661, 1e-8);
   EXPECT_PRED_FORMAT2(AssertQStringsEqual, skyPoint2.findKeyword("PixelValue"), "Null");
-  EXPECT_NEAR( (double) skyPoint2.findKeyword("CelestialNorthClockAngle"), 239.03650950112, 1e-8);
+  EXPECT_NEAR( (double) skyPoint2.findKeyword("CelestialNorthClockAngle"), 239.03639925925, 1e-8);
 
  // Call Skypt on an on-body pixel and check for valid pixel value.
   QVector<QString> argsSkypt3 = {"from="+noprojCube.fileName(),
@@ -731,11 +731,11 @@ TEST_F(DefaultCube, FunctionalTestNoprojOffBodyTrueOffBodyTrimTrue) {
   // On-body pixel is expected to be valid.
   EXPECT_DOUBLE_EQ( (double) skyPoint3.findKeyword("Sample"), 500.0);
   EXPECT_DOUBLE_EQ( (double) skyPoint3.findKeyword("Line"), 500.0);
-  EXPECT_NEAR( (double) skyPoint3.findKeyword("RightAscension"), 179.04568028209, 1e-8);
-  EXPECT_NEAR( (double) skyPoint3.findKeyword("Declination"), -2.3705704590705, 1e-8);
+  EXPECT_NEAR( (double) skyPoint3.findKeyword("RightAscension"), 179.04549552762001, 1e-8);
+  EXPECT_NEAR( (double) skyPoint3.findKeyword("Declination"), -2.370616350111, 1e-8);
   EXPECT_NEAR( (double) skyPoint3.findKeyword("EphemerisTime"), 610696049.67661, 1e-8);
-  EXPECT_NEAR( (double) skyPoint3.findKeyword("PixelValue"), 0.030888285, 1e-8);
-  EXPECT_NEAR( (double) skyPoint3.findKeyword("CelestialNorthClockAngle"), 238.96088012888, 1e-8);
+  EXPECT_NEAR( (double) skyPoint3.findKeyword("PixelValue"), 0.030219724, 1e-8);
+  EXPECT_NEAR( (double) skyPoint3.findKeyword("CelestialNorthClockAngle"), 238.96087237795, 1e-8);
 
 }
 
@@ -804,11 +804,11 @@ TEST_F(DefaultCube, FunctionalTestNoprojOffBodyTrueOffBodyTrimTrue) {
 
   EXPECT_DOUBLE_EQ( (double) skyPoint1.findKeyword("Sample"), 20.0);
   EXPECT_DOUBLE_EQ( (double) skyPoint1.findKeyword("Line"), 30.0);
-  EXPECT_NEAR( (double) skyPoint1.findKeyword("RightAscension"), 181.57392134043, 1e-8);
-  EXPECT_NEAR( (double) skyPoint1.findKeyword("Declination"), -1.7118980812905, 1e-8);
+  EXPECT_NEAR( (double) skyPoint1.findKeyword("RightAscension"), 181.5703153396, 1e-8);
+  EXPECT_NEAR( (double) skyPoint1.findKeyword("Declination"), -1.712838512527, 1e-8);
   EXPECT_NEAR( (double) skyPoint1.findKeyword("EphemerisTime"), 610696049.67661, 1e-8);
   EXPECT_PRED_FORMAT2(AssertQStringsEqual, skyPoint1.findKeyword("PixelValue"), "Null");
-  EXPECT_NEAR( (double) skyPoint1.findKeyword("CelestialNorthClockAngle"), 239.06702667495, 1e-8);
+  EXPECT_NEAR( (double) skyPoint1.findKeyword("CelestialNorthClockAngle"), 239.06687506777, 1e-8);
 
   // Call Skypt on an off-body pixel and check for a Null pixel value.
   QVector<QString> argsSkypt2 = {"from="+noprojCube.fileName(),
@@ -824,11 +824,11 @@ TEST_F(DefaultCube, FunctionalTestNoprojOffBodyTrueOffBodyTrimTrue) {
   // On-body pixel is expected to be valid.
   EXPECT_DOUBLE_EQ( (double) skyPoint2.findKeyword("Sample"), 100.0);
   EXPECT_DOUBLE_EQ( (double) skyPoint2.findKeyword("Line"), 200.0);
-  EXPECT_NEAR( (double) skyPoint2.findKeyword("RightAscension"), 180.84768002386, 1e-8);
-  EXPECT_NEAR( (double) skyPoint2.findKeyword("Declination"), -1.6384132695942, 1e-8);
+  EXPECT_NEAR( (double) skyPoint2.findKeyword("RightAscension"), 180.84505524757, 1e-8);
+  EXPECT_NEAR( (double) skyPoint2.findKeyword("Declination"), -1.6394524986874, 1e-8);
   EXPECT_NEAR( (double) skyPoint2.findKeyword("EphemerisTime"), 610696049.67661, 1e-8);
   EXPECT_PRED_FORMAT2(AssertQStringsEqual, skyPoint2.findKeyword("PixelValue"), "Null");
-  EXPECT_NEAR( (double) skyPoint2.findKeyword("CelestialNorthClockAngle"), 239.03650950112, 1e-8);
+  EXPECT_NEAR( (double) skyPoint2.findKeyword("CelestialNorthClockAngle"), 239.03639925925, 1e-8);
 
  // Call Skypt on an on-body pixel and check for valid pixel value.
   QVector<QString> argsSkypt3 = {"from="+noprojCube.fileName(),
@@ -844,11 +844,11 @@ TEST_F(DefaultCube, FunctionalTestNoprojOffBodyTrueOffBodyTrimTrue) {
   // On-body pixel is expected to be valid.
   EXPECT_DOUBLE_EQ( (double) skyPoint3.findKeyword("Sample"), 500.0);
   EXPECT_DOUBLE_EQ( (double) skyPoint3.findKeyword("Line"), 500.0);
-  EXPECT_NEAR( (double) skyPoint3.findKeyword("RightAscension"), 179.04568028209, 1e-8);
-  EXPECT_NEAR( (double) skyPoint3.findKeyword("Declination"), -2.3705704590705, 1e-8);
+  EXPECT_NEAR( (double) skyPoint3.findKeyword("RightAscension"), 179.04549552762, 1e-8);
+  EXPECT_NEAR( (double) skyPoint3.findKeyword("Declination"), -2.370616350112, 1e-8);
   EXPECT_NEAR( (double) skyPoint3.findKeyword("EphemerisTime"), 610696049.67661, 1e-8);
-  EXPECT_NEAR( (double) skyPoint3.findKeyword("PixelValue"), 0.030888285, 1e-8);
-  EXPECT_NEAR( (double) skyPoint3.findKeyword("CelestialNorthClockAngle"), 238.96088012888, 1e-8);
+  EXPECT_NEAR( (double) skyPoint3.findKeyword("PixelValue"), 0.030219724, 1e-8);
+  EXPECT_NEAR( (double) skyPoint3.findKeyword("CelestialNorthClockAngle"), 238.96087237795, 1e-8);
 
 }
 

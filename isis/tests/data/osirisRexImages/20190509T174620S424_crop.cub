@@ -4827,11 +4827,11 @@ Object = crop
 End_Object
 
 Object = spiceinit
-  IsisVersion       = "9.0.0  | 2025-04-27"
+  IsisVersion       = "9.0.0  | 2025-04-28"
   AleVersion        = "0.11.0 | py312hc47a885_3"
   ProgramVersion    = 2021-08-10
   ProgramPath       = /Users/kledmundson/ISISDev/sarahNoProj/ISIS3/build/bin
-  ExecutionDateTime = 2025-04-27T13:08:21
+  ExecutionDateTime = 2025-04-29T07:24:15
   HostName          = x86_64-apple-darwin13.4.0
   UserName          = kledmundson
   Description       = "Update SPICE data (kernels, pointing, and position) for
