@@ -127,8 +127,7 @@
     <change name="Sarah Sutton" date="2025-04-30">
 	   Incorporated Kris Becker's keyword additions OFFBODY and OFFBODYTRIM
 	   of 1/16/2019 and 1/28/2019 from UofA codebase to Astrogeology.	
-	   Added examples and updated documentation.
-       Addresses #3602.
+	   Added examples and updated documentation. Addresses #3602.
     </change>
   </history>
 
@@ -360,11 +359,12 @@
         <type>boolean</type>
         <default><item>TRUE</item></default>
         <brief>
-          Set select pixels in OFFBODY mode to NULL
+              Set select pixels in OFFBODY mode to NULL
         </brief>
         <description>
-              When using OFFBODY mode, there are situations where the pixel in
-              the MATCH do not intersect the target body.
+              When using OFFBODY mode, there are situations where the coordinates in
+              the MATCH do not intersect the target body (i.e., the pixel does not have
+              a latitude and longitude).
               In that case, the MATCH RA/DEC coordinate is mapped into the FROM 
               image field of view. 
               If the RA/DEC maps to a FROM sample/line and OFFBODYTRIM=TRUE, 
@@ -391,24 +391,29 @@
         Both cubes are initialized with <i>spiceinit</i> using 
         the bennu_g_00880mm_alt_obj_0000n00000_v020.bds global shapemodel found in the 
         <a href="https://arcnav.psi.edu/urn:nasa:pds:orex.spice">OSIRIS-REX SPICE KERNEL bundle</a>.    
- 
-      <h3>Input images</h3> 
-        <p>
-        <img src='assets/images/example1/short_from.jpeg' alt='NavCam Image 20190106T205611S433_ncm_L0' width='300'/>
-          <brief> Short exposure cube. </brief>
-          <description>
-            OSIRIS-REx NavCam image 20190106T205611S433_ncm_L0.
-          </description>
-        </p>
-        
-        <p>
-        <img src='assets/images/example1/long_from.jpeg' alt='NavCam Image 20190106T205618S792_ncm_L0' width='300'/>
-          <brief> Long exposure cube. </brief>
+
+       <h3>Input images</h3> 
+
+       <p>
+        <image src="assets/images/example1/long_from.jpeg" width="500">
+          <brief> Long exposure cube </brief>
           <description>
             OSIRIS-REx NavCam image 20190106T205618S792_ncm_L0.
           </description>
-
-      <h3>Run noproj</h3> 
+          <thumbnail caption="OSIRIS-REx NavCam image 20190106T205618S792_ncm_L0" src="assets/thumbs/example1/long_from_thumb.jpeg" width="200"/>
+        </image>
+       </p>
+       <p>
+        <image src="assets/images/example1/short_from.jpeg" width="500">
+          <brief> Short exposure cube </brief>
+          <description>
+            OSIRIS-REx NavCam image 20190106T205611S433_ncm_L0.
+          </description>
+          <thumbnail caption="OSIRIS-REx NavCam image 20190106T205611S433_ncm_L0" src="assets/thumbs/example1/short_from_thumb.jpeg" width="200"/>
+        </image>
+       </p>
+             
+      <h3>Run noproj on both cubes</h3> 
         <p>
         Run <i>noproj</i> to remove camera distortions on the long exposure image, 
         using same cube as inputs to the FROM and MATCH parameters. 
@@ -429,18 +434,48 @@
         
        <terminalInterface>
         <commandLine>
-        noproj from=20190106T205618S792_ncm_L0.cub match=20190106T205618S792_ncm_L0.cub 
+        from=20190106T205618S792_ncm_L0.cub match=20190106T205618S792_ncm_L0.cub 
         offbody=true offbodytrim=false to=noproj_long_792_OB_t_OBT_F.cub
         </commandLine>
         <description>
         Command line for this example.
         </description>
        </terminalInterface>  
- 
+       
+        <p>      
+        <image src="assets/images/example1/noproj_long.jpeg" width="500">
+          <brief> Distortion-corrected long exposure cube </brief>
+          <description>
+            OSIRIS-REx NavCam image 20190106T205618S792_ncm_L0 after running <i>noproj</i>.
+            Note that null pixels are yellow to illustrate the undistorted image outline.
+          </description>
+          <thumbnail caption="Distortion-corrected OSIRIS-REx NavCam image 20190106T205618S792_ncm_L0" src="assets/thumbs/example1/noproj_long_thumb.jpeg" width="200"/>
+        </image>
+        </p>
+
         <p>
         Run <i>noproj</i> to remove camera distortions on the short exposure image, 
         using the <i>noproj</i>'ed long exposure as the MATCH cube. 
+        The specifications file (specs.pvl) is required because the MATCH cube has been
+        run through <i>noproj</i> and is now identified as an "Ideal" camera in the label.
+        The specifications file describes the undistorted image.
         </p>
+        
+        <p>
+        In this case the detector size is specified as:
+        </p>
+        
+        <pre>
+        Object = IdealInstrumentsSpecifications
+
+          Group = "IdealSpacecraft/IdealCamera"
+            DetectorSamples = 3050
+            DetectorLines = 2404
+          End_Group
+
+        End_Object
+        End
+        </pre>
         
         <p>
         Set OFFBODY=FALSE to set all the pixels outside of the target body to null.
@@ -456,32 +491,45 @@
         
        <terminalInterface>
         <commandLine>
-        noproj from=20190106T205611S433_ncm_L0.cub match=noproj_long_792_OB_t_OBT_F.cub 
-        offbody=true offbodytrim=false to=noproj_short_433_m792_OB_f_OBT_F.cub
+        from=20190106T205611S433_ncm_L0.cub match=noproj_long_792_OB_t_OBT_F.cub 
+        offbody=true offbodytrim=false to=noproj_short_433_m792_OB_f_OBT_F.cub specs=specs.pvl 
         </commandLine>
         <description>
         Command line for this example.
         </description>
        </terminalInterface>  
 
-
-      <h3>Output images</h3> 
-        <p>
-        <img src='assets/images/example1/noproj_short.jpeg' alt='Undistorted NavCam Image 20190106T205611S433_ncm_L0' width='300'/>
-          <brief> Short exposure cube. </brief>
+       <p>
+        <image src="assets/images/example1/noproj_short.jpeg" width="500">
+          <brief> Distortion-corrected short exposure cube </brief>
           <description>
             OSIRIS-REx NavCam image 20190106T205611S433_ncm_L0 after running <i>noproj</i>.
+            Note that null pixels are yellow to illustrate the undistorted image outline.
           </description>
-        </p>
+          <thumbnail caption="Distortion-corrected OSIRIS-REx NavCam image 20190106T205611S433_ncm_L0" src="assets/thumbs/example1/noproj_short_thumb.jpeg" width="200"/>
+        </image>
+       </p>
+
         
+      <h3>Mosaic the long and short exposures.</h3> 
         <p>
-        <img src='assets/images/example1/noproj_long.jpeg' alt='Undistorted NavCam Image 20190106T205618S792_ncm_L0' width='300'/>
-          <brief> Long exposure cube. </brief>
-          <description>
-            OSIRIS-REx NavCam image 20190106T205618S792_ncm_L0 after running <i>noproj</i>.
-          </description>
+        Run <i>handmos</i> with the short exposure mosaicked on top of the long exposure.
+        Both <i>noproj</i>'ed cubes have been contrast-stretched but only at a rudimentary level.
+        This example does not reproduce the full processing required to generate the 
+        figure in the referenced article. It does demonstrate the need for the OFFBODY and
+        OFFBODYTRIM parameters.
         </p>
- 
+          
+         <p>
+        <image src="assets/images/example1/particle_mosaic.jpeg" width="500">
+          <brief> Mosiacked particle ejection observations </brief>
+          <description>
+            OSIRIS-REx NavCam image 20190106T205611S433_ncm_L0 combined with 20190106T205618S792_ncm_L0.
+          </description>
+          <thumbnail caption="OSIRIS-REx NavCam image 20190106T205611S433_ncm_L0 combined with 20190106T205618S792_ncm_L0." src="assets/thumbs/example1/particle_mosaic_thumb.jpeg" width="200"/>
+        </image>
+        </p>
+
      <h3>To Reproduce This Example</h3>        
         <p>
         Download the <a href="assets/files/process_navcam_particle_images.sh" target="_blank">shell script</a>, 
@@ -496,12 +544,12 @@
         which after running <i>noproj</i> is identified as the "Ideal" camera model.
         Before running the script, place the preference and specification files 
         in $ISISROOT. 
-        Download and move the OSIRIS-REx DSK (shapemodel) kernel into $ISISDATA. 
+        The script will download and move the OSIRIS-REx DSK (shapemodel) kernel into $ISISDATA. 
         See the
         <a href="https://github.com/DOI-USGS/ISIS3/blob/dev/README.md#Mission-Specific-Data-Downloads" target="_blank">ISIS documentation</a>
         for instructions on downloading $ISISDATA for a specific mission.
         </p>
-       </description>
+      </description>
       </example>          
    </examples>
 </application>
