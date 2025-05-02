@@ -412,11 +412,12 @@
         <img src='assets/images/example1/noproj_example1_cmdLine2.png' width="2600"/>
 
         <p>
-          Here, OFFBODY and OFFBODYTRIM are FALSE. OFFBODY=FALSE to set all pixels off the
+          Here, OFFBODY and OFFBODYTRIM are FALSE. OFFBODY is set to FALSE to set all pixels off the
           target body to null. The <i>noproj</i>'ed long exposure output is used as the MATCH cube. 
           The specifications file (specs.pvl) is required because the MATCH cube has been
           run through <i>noproj</i> and is now identified as an "Ideal" camera in the label.
-          The specifications file contains the undistorted image dimensions. In this case:
+          The specifications file contains the undistorted (Ideal camera) detector dimensions. 
+          In this case:
 
           <pre>
             Object = IdealInstrumentsSpecifications
@@ -439,20 +440,22 @@
           Null pixels are shown in yellow to illustrate the undistorted image outline.
         </p>
 
-        <h3>Mosaicking the noproj'ed long and short exposures</h3> 
+        <h3>Mosaic the <i>noproj</i>'ed long and short exposures</h3> 
         
         <p>
-          Run <a href="../handmos/handmos.html" target="_blank">handmos</a> with the short
-          exposure mosaicked on top of the long exposure. Both <i>noproj</i>'ed cubes have
-          been contrast-stretched but only at a rudimentary level. This example does not
+          To see the ejected particles <em>and</em> the surface of Bennu in the same scene,
+          we mosaicked the short exposure cube on top of the long exposure cube using 
+          <a href="../handmos/handmos.html" target="_blank">handmos</a>. 
+          In the image shown, both <i>noproj</i>'ed cubes have been contrast-stretched, 
+          but only at a rudimentary level. This example does not
           reproduce the full processing required to generate the figure in the article
-          referenced above. It does however demonstrate the need for the OFFBODY and
-          OFFBODYTRIM parameters.
+          referenced above, but it does illustrate a case where it is necessary to 
+          preserve off-body pixels.
         </p>
           
         <h3>Particle ejection observations mosaic</h3> 
 
-        <img src='assets/images/example1/particle_mosaic.jpeg' width="500"/>
+        <img src='assets/images/example1/particle_mosaic.jpeg' width="600"/>
 
         <p>
           OSIRIS-REx NavCam image 20190106T205611S433_ncm_L0 combined with 20190106T205618S792_ncm_L0.
