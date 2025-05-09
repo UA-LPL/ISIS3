@@ -36,11 +36,10 @@ release.
 ## [Unreleased]
 
 ### Added
-- Added OFFBODY and OFFBODYTRIM parameters to noproj. Added tests and updated documentation. [#3602](https://github.com/DOI-USGS/ISIS3/issues/3602)
+- Added OFFBODY and OFFBODYTRIM parameters to noproj and cam2cam. Added tests and updated documentation. [#3602](https://github.com/DOI-USGS/ISIS3/issues/3602)
 - Added Mac Arm build support and adjusted the tests appropriately.
 - Added adjusted XYZ point coordinate sigmas to the points.csv jigsaw output file. Modified
 ctest FunctionalTestJigsawApollo to validate this output. [#5710](https://github.com/DOI-USGS/ISIS3/issues/5710)
-- Added OFFBODY and OFFBODYTRIM parameters to cam2cam. Added tests and updated documentation. [#3602](https://github.com/DOI-USGS/ISIS3/issues/3602)
 - Added support for reading, writing, and viewing GeoTIFFs in ISIS. [#5618](https://github.com/DOI-USGS/ISIS3/pull/5618)
 - Added GDAL SRS propagation for systems outside of ISIS to display projected GTiffs. [#5736](https://github.com/DOI-USGS/ISIS3/pull/5736)
 - Added ale version to history blob. [#5207](https://github.com/DOI-USGS/ISIS3/issues/5207)
@@ -134,7 +133,6 @@ file. Slightly modified the FunctionalTestJigsawBundleXYZ ctest accordingly. Iss
 
 ### Added
 - Added versioned default values to lrowacphomap's PHOALGO and PHOPARCUBE parameters and updated lrowacphomap to handle them properly. [#5452](https://github.com/DOI-USGS/ISIS3/pull/5452)
-- Added input parameters OFFBODY and OFFBODYTRIM to noproj and cam2cam. [#3602](https://github.com/DOI-USGS/ISIS3/issues/3602) 
 
 ## [8.2.0] - 2024-04-18
 
