@@ -30,9 +30,6 @@
           <li class="usa-sidenav__item">
             <a href="{$menuPath}Application/alpha.html">By Alphabetical</a>
           </li>
-          <li class="usa-sidenav__item">
-            <a href="{$menuPath}Application/oldvnew.html">Old vs. New</a>
-          </li>
         </ul>
       </li>
       <li class="usa-sidenav__item">
@@ -73,7 +70,7 @@
         versions.forEach(version => {
           const li = document.createElement('li');
           li.className = 'usa-sidenav__item';
-          if (currentVersion === version) {
+          if (currentVersion === version.toLowerCase()) {
             li.classList.add('usa-current');
           }
           li.innerHTML = `<a href="https://isis.astrogeology.usgs.gov/${version}/">${version}</a>`;
@@ -107,9 +104,6 @@
               </li>
               <li class="usa-sidenav__item">
                 <a href="{$menuPath}Application/alpha.html">By Alphabetical</a>
-              </li>
-              <li class="usa-sidenav__item">
-                <a href="{$menuPath}Application/oldvnew.html">Old vs. New</a>
               </li>
             </ul>
           </div>
