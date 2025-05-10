@@ -15,6 +15,7 @@ find files of those names at the top level of this repository. **/
 #include "NaifDskApi.h"
 
 #include <QMutexLocker>
+#include <QStringList>
 #include <QTime>
 
 #include "FileName.h"
@@ -24,9 +25,6 @@ find files of those names at the top level of this repository. **/
 #include "NaifDskPlateModel.h"
 #include "NaifStatus.h"
 
-#include <QStringList>
-
-// #define DSK_DEBUG 1
 
 using namespace std;
 
@@ -50,21 +48,9 @@ namespace Isis {
 
 
   /**
-   * Desctructor
+   * Destructor
    */
-  BulletDskShape::~BulletDskShape() {
-    // Bullet does not clean up the mesh automatically, so we need to delete it manually
-    if (m_mesh) {
-      for (int i = 0; i < m_mesh->getIndexedMeshArray().size(); i++) {
-        btIndexedMesh &v_mesh = m_mesh->getIndexedMeshArray()[i];
-        delete[] v_mesh.m_triangleIndexBase;
-        v_mesh.m_triangleIndexBase = nullptr;
-        delete[] v_mesh.m_vertexBase;
-        v_mesh.m_vertexBase = nullptr;
-      }
-    }
-  }
-
+  BulletDskShape::~BulletDskShape() { }
 
   /**
    * Return the number of triangles in the shape
@@ -159,6 +145,19 @@ namespace Isis {
 /**
  * @brief Load the contents of a NAIF DSK and create a Bullet triangle mesh
  *
+ * Do realtime validation. DSK limits triangles to 32M and vertices to ~16M vectors
+ * so ensure each segment shape can fit in a single Bullet part.  See
+ * https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/dsk.html#Appendix%20B%20---%20DSK%20Subsystem%20Limits
+ *
+ * Bullet limits in the repo are currently set at 4 parts and 134,217,728 triangles. However,
+ * that version has not been release since Aug 2022. Hence, we must ensure that all segment shapes
+ * fit into the bullet mesh mapping scheme which did have 1024 parts that supports no more
+ * than 2,097,152 triangles. At ant rate, loading DSKs must consider these limits when mapping to
+ * bullet use. So DSK support is limited to at most 1024 segments where each segment has no more
+ * than 2,097,152. Since 
+ *
+ * See https://github.com/bulletphysics/bullet3/blob/master/src/BulletCollision/BroadphaseCollision/btQuantizedBvh.h
+ *
  * @author 2017-03-28 Kris Becker
  *
  * @param dskfile The DSK file to load.
@@ -166,7 +165,9 @@ namespace Isis {
   void BulletDskShape::loadFromDsk(const QString &dskfile) {
 
     /** NAIF DSK parameter setup   */
-    SpiceInt                   handle;   //!< The DAS file handle of the DSK file.
+    SpiceInt      handle;   //!< The DAS file handle of the DSK file.
+    SpiceBoolean  found;
+    SpiceDLADescr segment;
 
     // Sanity check
     FileName dskFile(dskfile);
@@ -180,8 +181,6 @@ namespace Isis {
     NaifStatus::CheckErrors();
 
     // Search to the first DLA segment
-    SpiceBoolean  found;
-    SpiceDLADescr segment;
     dlabfs_c( handle, &segment, &found );
     NaifStatus::CheckErrors();
     if ( !found ) {
@@ -189,32 +188,21 @@ namespace Isis {
       throw IException(IException::User, mess, _FILEINFO_);
     }
 
-    std::vector<SpiceDLADescr> segments;
-    segments.push_back(segment);
-
-    // Iterate until you find no more segments.
-
   #if defined(DSK_DEBUG)
     std::cout << "Maximum Bullet Parts:   " << bt_MaxBodyParts() << std::endl;
     std::cout << "Maximum Triangles/Part: " << bt_MaxTriangles() << std::endl;
   #endif
 
-    // Do realtime validation. DSK limits triangles to 32M and vertices to ~16M vectors
-    // so ensure each segment shape can fit in a single Bullet part.  See
-    // https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/dsk.html#Appendix%20B%20---%20DSK%20Subsystem%20Limits
-    //
-    // Bullet limits are currently set at 16 parts and 134,217,728 triangles. Thus,
-    // all segment shapes should fit in a single segment so supported DSKs cannot
-    // have more than 16 segments.
-    //
-    // See https://github.com/bulletphysics/bullet3/blob/master/src/BulletCollision/BroadphaseCollision/btQuantizedBvh.h
-    SpiceInt max_bt_parts    = bt_MaxBodyParts();
-    SpiceInt max_bt_triangles = bt_MaxTriangles();
-    SpiceInt nparts_required = 0;
-    QStringList segment_errors;
+    // Now allocate a new indexed mesh to contain all the DSK data
+    // Clear any existing buffers
+    m_mesh.reset( new btTriangleIndexVertexArray() );
+    m_buffers.clear();
 
-    while(found) {
+    int n_parts = 0;
+    int n_segments = 0;
 
+    while( found ) {
+      
       // Validate last segment found before searching for the next segment
       SpiceInt s_plates;
       SpiceInt s_vertices;
@@ -222,102 +210,56 @@ namespace Isis {
       NaifStatus::CheckErrors();
 
 #if defined(DSK_DEBUG)
-      std::cout << "\nSegment:   " << segments.size() << std::endl;
+      std::cout << "\nSegment:   " << n_segments << std::endl;
       std::cout << "#Vertices: " << s_vertices << std::endl;
       std::cout << "#Plates:   " << s_plates << std::endl;
 #endif
 
-      if ( s_plates > max_bt_triangles ) {
-        QString mess = "Segment " + toString( (int) (segments.size()-1) ) + " number triangles ("
-                      + toString(s_plates) + ") exceeds Bullet maximum of " + toString( max_bt_triangles);
-        segment_errors.push_back( mess );
-      }
-
-      // Determine how many parts is required to store this segment (restricted to 1!)
-      size_t s_parts = (s_plates + max_bt_triangles - 1) / max_bt_triangles;
-      nparts_required += s_parts; 
-
-      // Search for the next segment and save it - will be validated in the next loop (above)
-      dlafns_c(handle, &segments.back(), &segment, &found);
-      NaifStatus::CheckErrors();
-
-      // Get the next segment
-      if (found) {
-        segments.push_back(segment);
-      }
-    }
-
-    // Check for maximum parts exceeded
-    if ( nparts_required > max_bt_parts ) {
-      QString mess = "DSK segment count/required parts (" + toString( nparts_required ) + 
-                     ") exceed Bullet maximum (" + toString( max_bt_parts ) + ")";   
-      segment_errors.push_back( mess );
-    }
-
-    // Report any errors and throw exception
-    if ( segment_errors.size() > 0 ) {
-      QString errors = segment_errors.join( "\n" );
-      throw IException(IException::User, errors, _FILEINFO_);      
-    }
-
-    // dskgd_c( v_handle, &v_dladsc, &v_dskdsc );
-    // NaifStatus::CheckErrors();
-
-    // Now allocate a new indexed mesh to contain all the DSK data
-    m_mesh.reset( new btTriangleIndexVertexArray());
-
-    for (size_t i = 0; i < segments.size(); i++) {
-      SpiceInt nplates;
-      SpiceInt nvertices;
-
-      btIndexedMesh i_mesh;
-
-      // Get size/counts
-      dskz02_c( handle, &segments[i], &nvertices, &nplates);
-      NaifStatus::CheckErrors();
-
-      m_mesh->addIndexedMesh(i_mesh, PHY_INTEGER);
-
-      // Get internal mesh reference and set parameters appropriately
-      btIndexedMesh &v_mesh = m_mesh->getIndexedMeshArray()[i];
-      v_mesh.m_vertexType = PHY_DOUBLE;
-
-      // Set and allocate data for triangle indexes
-      v_mesh.m_numTriangles = nplates;
-      v_mesh.m_triangleIndexBase = new unsigned char[nplates * 3 * sizeof(int)];
-      v_mesh.m_triangleIndexStride = (sizeof(int) * 3);
-
-      // Set and allocate vertex data
-      v_mesh.m_numVertices = nvertices;
-      v_mesh.m_vertexBase = new unsigned char[nvertices * 3 * sizeof(double)];
-      v_mesh.m_vertexStride = (sizeof(double) * 3);
+      // Initialize the DSK data buffer container
+      DskSegmentBuffer dsk_buffer(n_segments, segment, s_plates, s_vertices );
 
       SpiceInt n;
-      (void) dskv02_c(handle, &segments[i], 1, nvertices, &n,
-                      ( SpiceDouble(*)[3] ) (v_mesh.m_vertexBase));
+      (void) dskv02_c(handle, &segment, 1, s_vertices, &n,
+                      ( SpiceDouble(*)[3] ) ( dsk_buffer.vector_ptr(0)));
       NaifStatus::CheckErrors();
-
+ 
       // Read the indexes from the DSK
-      (void) dskp02_c(handle, &segments[i], 1, nplates, &n,
-                      ( SpiceInt(*)[3] ) (v_mesh.m_triangleIndexBase));
+      (void) dskp02_c(handle, &segment, 1, s_plates, &n,
+                     ( SpiceInt(*)[3] ) (dsk_buffer.index_ptr(0)));
       NaifStatus::CheckErrors();
+       
+      // Subtract one from the index to make it 0-based and add to Bullet mesh
+      dsk_buffer.add_index_offset( -1 );
+      m_buffers.push_back( dsk_buffer );
+      n_parts += dsk_buffer.addtomesh( *m_mesh );
+      n_segments++;
 
-      // Got to reset the vertex indexes to 0-based
-      int *pindex = static_cast<int *> ((void *) v_mesh.m_triangleIndexBase);
-      int nverts = nplates * 3;
-      for (int i = 0 ; i < nverts ; i++) {
-        pindex[i] -= 1;
-        btAssert ( pindex[i] >= 0 );
-        btAssert ( pindex[i] < nvertices );
-      }
+      // Search for the next segment and retain for next loop (above)
+      dlafns_c(handle,  &dsk_buffer.dla(), &segment, &found);
+      NaifStatus::CheckErrors();
     }
+    
+#if defined(DSK_DEBUG)
+    std::cout << "\n#Segments: " << m_buffers.size() << std::endl;
+    std::cout <<   "#Parts:    " << n_parts << std::endl;
+#endif    
 
     // Close DSK
     dascls_c(handle);
 
+    // Set up the triange mesh and target object
     bool useQuantizedAabbCompression = true;
-    // bool useQuantizedAabbCompression = false;
-    btBvhTriangleMeshShape *v_triShape = new btBvhTriangleMeshShape(m_mesh.data(),
+    if ( n_parts > bt_MaxBodyParts() ) {
+      std::cout << "*** WARNING ***  BulletDskShape total mesh parts (" << n_parts 
+                << ") exceeds Bullet max (" << bt_MaxBodyParts() << ") - quantized AABB compression disabled"
+                << std::endl;
+
+      // Cannot use quantized compresssio
+      useQuantizedAabbCompression = false;
+    }
+
+    // Note the btCollisionObject is managed in this class, see pointer allocations
+    btBvhTriangleMeshShape *v_triShape = new btBvhTriangleMeshShape(m_mesh.get(),
                                                                     useQuantizedAabbCompression);
     v_triShape->setUserPointer(this);
     btCollisionObject *vbody = new btCollisionObject();

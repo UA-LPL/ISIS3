@@ -7,10 +7,16 @@ find files of those names at the top level of this repository. **/
 
 /* SPDX-License-Identifier: CC0-1.0 */
 
+#include <memory>
+
 #include <QScopedPointer>
 #include <QString>
 #include <QVector>
 
+
+// #define DSK_DEBUG 1
+
+#include "DskSegmentBuffer.hpp"
 #include "BulletTargetShape.h"
 #include "BulletClosestRayCallback.h"
 
@@ -40,7 +46,8 @@ namespace Isis {
       virtual btMatrix3x3 getTriangle(const int index, const int segment=0) const;
 
     private:
-      QSharedPointer<btTriangleIndexVertexArray> m_mesh; /**! Triangular mesh representation of
+      std::vector<DskSegmentBuffer>               m_buffers;
+      std::shared_ptr<btTriangleIndexVertexArray> m_mesh; /**! Triangular mesh representation of
                                                               the target shape. The vertex ordering
                                                               is the same as in the DSK file,
                                                               except the DSK uses 1-based indexing
