@@ -145,20 +145,31 @@ namespace Isis {
 /**
  * @brief Load the contents of a NAIF DSK and create a Bullet triangle mesh
  *
- * Do realtime validation. DSK limits triangles to 32M and vertices to ~16M vectors
- * so ensure each segment shape can fit in a single Bullet part.  See
- * https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/dsk.html#Appendix%20B%20---%20DSK%20Subsystem%20Limits
+ * Do realtime validation of Bullet mesh limits. Ensure DSK segment shapes
+ * fit properly in mesh Bullet parts to enable quantized optimzation.
+ * 
+ * See https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/dsk.html#Appendix%20B%20---%20DSK%20Subsystem%20Limits
  *
- * Bullet limits in the repo are currently set at 4 parts and 134,217,728 triangles. However,
- * that version has not been release since Aug 2022. Hence, we must ensure that all segment shapes
- * fit into the bullet mesh mapping scheme which did have 1024 parts that supports no more
- * than 2,097,152 triangles. At ant rate, loading DSKs must consider these limits when mapping to
- * bullet use. So DSK support is limited to at most 1024 segments where each segment has no more
- * than 2,097,152. Since 
+ * Bullet limits in the repo are currently set at 4 parts and 134,217,728
+ * triangles. However, that version has not been released since the Aug 2022
+ * commit. Hence, we must ensure that all DSK segment shapes fit into the
+ * Bullet mesh mapping scheme which currently has 1024 parts which supports
+ * no more than 2,097,152 triangles. At any rate, loading DSKs must consider
+ * these limits when mapping to bullet. So quantized optimization for DSK
+ * support is limited to at most 1024 segments where each segment has no more
+ * than 2,097,152 facets.
  *
  * See https://github.com/bulletphysics/bullet3/blob/master/src/BulletCollision/BroadphaseCollision/btQuantizedBvh.h
  *
+ * This configuration can change in future Bullet releases and may impact use
+ * of quantized optimizations for DSKs. Larger DSKs can still (apparently) be
+ * used in Bullet if these limits are exceeded but quantized optimzations of
+ * the Bullet mesh is disabled for these types of DSKs.
+ * 
  * @author 2017-03-28 Kris Becker
+ * @history 2025-05-11 Kris J Becker - Updated implementation to provide
+ *                       generic support for Bullet quantized optimization
+ *                       limits. Fixes #5772.
  *
  * @param dskfile The DSK file to load.
  */
