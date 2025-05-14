@@ -121,13 +121,13 @@
       Incorporated Kris Becker's 2021-09-22 bug fix above into USGS code base.
     </change>
     <change name="Ken Edmundson" date="2024-08-07">
-        Additional bug fix to address persistent temporary lbl file after
-        running noproj. Fixes #5577.
+      Additional bug fix to address persistent temporary lbl file after
+      running noproj. Fixes #5577.
     </change>
     <change name="Sarah Sutton" date="2025-04-30">
-	   Incorporated Kris Becker's keyword additions OFFBODY and OFFBODYTRIM
-	   of 1/16/2019 and 1/28/2019 from UofA codebase to Astrogeology.	
-	   Added examples and updated documentation. Addresses #3602.
+	    Incorporated Kris Becker's keyword additions OFFBODY and OFFBODYTRIM
+	    of 1/16/2019 and 1/28/2019 from UofA codebase to Astrogeology.	
+	    Added examples and updated documentation. Addresses #3602.
     </change>
   </history>
 

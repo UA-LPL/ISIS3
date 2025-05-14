@@ -134,5 +134,7 @@ namespace Isis {
     m.StartProcess(*transform, *interp);
     m.EndProcess();
 
+    // Cleanup
+    delete transform;
   }
 }
