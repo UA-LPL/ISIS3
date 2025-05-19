@@ -48,6 +48,7 @@ ctest FunctionalTestJigsawApollo to validate this output. [#5710](https://github
 - Added ShowDeprecated option to show or hide warnings in IsisPreferences. [#5611](https://github.com/DOI-USGS/ISIS3/issues/5611)
 
 ### Changed
+- Changed mechanism for specifying shapemodel RayTraceEngine keywords from IsisPreferences to BulletEngineSelect.pref file. BulletEngineSelect.pref was added to ISIS3/isis and CMakeLists.txt updated so that the file is copied to $ISISROOT by cmake. [#5807](https://github.com/DOI-USGS/ISIS3/issues/5807)
 - Removed Arm dependency on xalan-c, as it does not build for now on conda-forge. This requires turning off doc building on Arm. Also changed some variables to avoid name clashes on Arm with clang 16. [#5802])(https://github.com/DOI-USGS/ISIS3/pull/5802)
 - Update OSIRIS-REx OCams instrument (Map, Poly, & SamCam) support to current state in UofA code base [#5426](https://github.com/DOI-USGS/ISIS3/issues/5426)
 - Enhanced csminit by removing the need to specify model and plugin [#5585](https://github.com/DOI-USGS/ISIS3/issues/5585)

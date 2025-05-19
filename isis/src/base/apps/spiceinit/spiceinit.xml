@@ -90,9 +90,11 @@
        not have their paths expanded.  This is to allow variables like $msg/ to work correctly.
     </p>
     <p>
-      The spiceinit program will also add the RayTraceEngine, OnError, and Tolerance keywords to the Kernels
-      group if specified in the IsisPreferences file. If included, these keywords specify the ray-tracing engine to use and how to use it for shapemodels.
-      Please see the IsisPreferences file for more details.
+      The <i>spiceinit</i> program will add the RayTraceEngine, OnError, and Tolerance keywords to the Kernels
+      group if specified in the preference file <i>BulletEngineSelect.pref</i>. These keywords set the
+      ray-tracing engine to use and how to use it for processing with shapemodels. To include these
+      keywords, run <i>spiceinit</i> with shape=user, a specified shape model, and
+      -pref=$ISISROOT/BulletEngineSelect.pref on the command line. 
 
     </p>
     <p><b>Troubleshooting:</b> If spiceinit is failing with the error
