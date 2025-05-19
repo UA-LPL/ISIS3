@@ -1,8 +1,13 @@
-#######################################################
-# This file allows the user to customize their Isis
-# configuration.  See the Isis Preference Dictionary
-# on our website isis.astrogeology.usgs.gov for a
-# full description of each group.
+########################################################
+# Specifies Bullet ray-tracing engine for processing with
+# shape models.
+#
+# RayTraceEngine = Bullet
+# OnError = Continue | Fail
+# Tolerance = { numerical value that will be set as the
+#           tolerance for the Bullet or Embree shape
+#           model }
+#
 ########################################################
 
 Group = ShapeModel
