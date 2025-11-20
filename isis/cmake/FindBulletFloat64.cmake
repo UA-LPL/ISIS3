@@ -1,60 +1,64 @@
-# CMake module for find_package(BULLET) double precision package
+# CMake module for find_package(BulletFloat64) double precision package
 # Finds include directory and all applicable libraries
 #
+#[=[
+This Bullet find module provides a target definition for the double precision
+version of the Bullet library. The target is provided as an imported library
+interface. It is derived from CMAKE varibles provided in the Bullet package
+configuration. The Bullet package is assumed to be provided in the Conda 
+environment but could be used by other compatible Bullet configurations that
+provide a double precision version the Bullet package.
 
-find_package(
-  Bullet
-  REQUIRED
-  CONFIGS
-  BulletConfig-float64.cmake )
+Note the only thing that differentiates the Conda package manager version is
+the explicit find_package() call that is specific to Conda. In the Conda
+Bullet package, the double precision package configuration is provided in 
+a separate CMAKE file, namely BulletConfig-float64.cmake. Other package
+managers use different techniques. However any package manager that provides
+consistent definitions of the Bullet CMAKE variables can use the 
+add_bullet_double_target() macro to create the Bullet::Bullet_double target.
 
-# Set up Bullet Float64 configuration
-set( BULLETFLOAT64_ROOT_DIR  "${BULLET_ROOT_DIR}" )
+This module provides the following elements:
 
-# Finds the Bullet include directory.
-string(FIND "${BULLET_INCLUDE_DIRS}" "${BULLETFLOAT64_ROOT_DIR}" has_bulletfloat64_dir )
-if( has_bulletfloat64_dir EQUAL -1)
-  cmake_path(APPEND BULLETFLOAT64_ROOT_DIR ${BULLET_INCLUDE_DIRS} 
-             OUTPUT_VARIABLE BULLETFLOAT64_INCLUDE_DIR )
-else()
-  set( BULLETFLOAT64_INCLUDE_DIR ${BULLET_INCLUDE_DIRS} )
-endif()
-set( BULLETFLOAT64_INCLUDE_DIRS  ${BULLETFLOAT64_INCLUDE_DIR} )
+add_bullet_double_target()   # Macro to generate the bullet Target
+Bullet::Bullet_double        # INTERFACE IMPORTED library target
+Bullet_double_FOUND          # Module found variable
 
-# Find the Bullet library directories
-string(FIND "${BULLET_LIBRARY_DIRS}" "${BULLETFLOAT64_ROOT_DIR}" has_bulletfloat64_lib )
-if( has_bulletfloat64_lib EQUAL -1 )
-  cmake_path(APPEND BULLETFLOAT64_ROOT_DIR ${BULLET_LIBRARY_DIRS}
-             OUTPUT_VARIABLE BULLETFLOAT64_LIBRARY_DIRS )
-else()
-  set( BULLETFLOAT64_LIBRARY_DIRS ${BULLET_LIBRARY_DIRS} )
-endif()
-set( BULLETFLOAT64_LIBRARY_DIR  ${BULLETFLOAT64_LIBRARY_DIRS} )
+To add this target to ISIS, just append the Bullet::Bullet_double target
+to ALLLIBS variable in ISIS3/isis/CMakeLists.txt file.
+]=]
 
-# Add the Bullet definitions and float64
-set( BULLETFLOAT64_DEFINITIONS "${BULLET_DEFINITIONS}" )
-set( BULLETFLOAT64_LIBRARIES ${BULLET_LIBRARIES} )
+macro(add_bullet_double_target)
 
-if(NOT
-   ${BULLETFLOAT64_DEFINITIONS}
-   MATCHES
-   ".*-DBT_USE_DOUBLE_PRECISION.*")
-  message(
-    ERROR "Bullet does not appear to be built with double precision, current definitions: ${BULLETFLOAT64_DEFINITIONS}")
-endif()
+  if (NOT TARGET Bullet::Bullet_double)
+    set(Bullet_double_FOUND FALSE)
+    if (BULLET_FOUND OR Bullet_FOUND )
+      if(NOT ${BULLET_DEFINITIONS} MATCHES ".*-DBT_USE_DOUBLE_PRECISION.*")
+        message(FATAL_ERROR "Bullet does not appear to be built with double "
+                  "precision, current definitions: ${BULLET_DEFINITIONS}")
+      endif()
+      message(STATUS "Bullet Compile Definitions: ${BULLET_DEFINITIONS}")
 
-add_definitions( ${BULLETFLOAT64_DEFINITIONS} )
-include_directories( ${BULLETFLOAT64_INCLUDE_DIRS} )
-link_directories( ${BULLETFLOAT64_LIBRARY_DIRS} )
+      # This configuration ensures the Bullet variable definitions are
+      # also conformant.
+      add_library(Bullet::Bullet_double INTERFACE IMPORTED)
+      set_target_properties(Bullet::Bullet_double
+        PROPERTIES
+          INTERFACE_COMPILE_DEFINITIONS "${BULLET_DEFINITIONS}"
+          INTERFACE_INCLUDE_DIRECTORIES "${BULLET_ROOT_DIR}/${BULLET_INCLUDE_DIRS}"
+          INTERFACE_LINK_DIRECTORIES "${BULLET_ROOT_DIR}/${BULLET_LIBRARY_DIR}"
+          INTERFACE_LINK_LIBRARIES "${BULLET_LIBRARIES}"
+      )
+      set(Bullet_double_FOUND TRUE)
+      message(STATUS "Bullet Target Created: Bullet::Bullet_double")
+    endif()
+  endif()
 
-message(STATUS "BULLETFLOAT64 DEFINITIONS:  "  "${BULLETFLOAT64_DEFINITIONS}" )
-message(STATUS "BULLETFLOAT64 INCLUDE DIRS: "  "${BULLETFLOAT64_INCLUDE_DIRS}" )
-message(STATUS "BULLETFLOAT64 LIBRARY DIRS: "  "${BULLETFLOAT64_LIBRARY_DIRS}" )
-message(STATUS "BULLETFLOAT64 LIBRARIES:    "  "${BULLETFLOAT64_LIBRARIES}" )
+endmacro()
 
-# Uniquely add each library for linking
-foreach (_bulletLib ${BULLETFLOAT64_LIBRARIES})
-  find_library( "BULLETFLOAT64_${_bulletLib}_LIBRARY" NAMES ${_bulletLib} 
-                PATHS ${BULLETFLOAT64_LIBRARY_DIRS} )
-  message(STATUS "Bullet Library: " "${BULLETFLOAT64_${_bulletLib}_LIBRARY}")
-endforeach()
+# Call the Conda specific Bullet double precision package
+find_package(Bullet REQUIRED CONFIGS BulletConfig-float64.cmake)
+
+# Create/confirm the Conda Bullet double precision interface target.
+# Note this target needs to be added to the end of the ALLLIBS variable
+# in ISIS3/isis/CMakeLists.txt file.
+add_bullet_double_target()
