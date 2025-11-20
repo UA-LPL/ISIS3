@@ -56,6 +56,7 @@ ctest FunctionalTestJigsawApollo to validate this output. [#5710](https://github
 - Adds PROJ into ISIS, and exposes the capability with a new class called IProj. [#5317](https://github.com/DOI-USGS/ISIS3/pull/5317)
 
 ### Changed
+- Improved the Conda Bullet CMAKE configuration in FindBulletFloat64.cmake. Adds the Bullet::Bullet_double target to ALLLIBS. [#5899](https://github.com/DOI-USGS/ISIS3/issues/5899)
 - Removed Arm dependency on xalan-c, as it does not build for now on conda-forge. This requires turning off doc building on Arm. Also changed some variables to avoid name clashes on Arm with clang 16. [#5802](https://github.com/DOI-USGS/ISIS3/pull/5802)
 - Update OSIRIS-REx OCams instrument (Map, Poly, & SamCam) support to current state in UofA code base [#5426](https://github.com/DOI-USGS/ISIS3/issues/5426)
 - Enhanced csminit by removing the need to specify model and plugin [#5585](https://github.com/DOI-USGS/ISIS3/issues/5585)
