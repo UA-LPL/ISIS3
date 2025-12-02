@@ -27,29 +27,58 @@ To add this target to ISIS, just append the Bullet::Bullet_double target
 to ALLLIBS variable in ISIS3/isis/CMakeLists.txt file.
 ]=]
 
+function(prepend_root_dir ifile rootpath outvar)
+  string(FIND "${ifile}" "${rootpath}" _root_pos)
+  set(_outpath "${ifile}")
+  if(_root_pos EQUAL -1)
+    string(PREPEND _outpath "${rootpath}/")
+  endif()
+  set(${outvar} "${_outpath}" PARENT_SCOPE)
+endfunction(prepend_root_dir)
+
+
+function(get_full_library_path inlibs libpath outlibs)
+  # WARNING: This loop is sensitive in that you must use NO_CACHE
+  # AND unset the _lib_t variable in order to find all the libraries.
+  # Otherwise, it only finds the first library! Repeatedly...
+  foreach(_lib IN LISTS inlibs)
+    find_library(_lib_t "${_lib}" PATH "${libpath}" NO_CACHE)
+    list(APPEND _alllibs ${_lib_t})
+    unset(_lib_t) # Must be done or it only finds the first library.
+  endforeach()
+  set(${outlibs} "${_alllibs}" PARENT_SCOPE)
+endfunction(get_full_library_path)
+
 macro(add_bullet_double_target)
 
-  if (NOT TARGET Bullet::Bullet_double)
-    set(Bullet_double_FOUND FALSE)
+  if ( NOT TARGET Bullet::Bullet_double )
     if (BULLET_FOUND OR Bullet_FOUND )
-      if(NOT ${BULLET_DEFINITIONS} MATCHES ".*-DBT_USE_DOUBLE_PRECISION.*")
-        message(FATAL_ERROR "Bullet does not appear to be built with double "
-                  "precision, current definitions: ${BULLET_DEFINITIONS}")
+      if(NOT "${BULLET_DEFINITIONS}" MATCHES ".*-DBT_USE_DOUBLE_PRECISION.*")
+        message(FATAL_ERROR "Bullet does not appear to be built with "
+                   "double precision, current definitions: ${BULLET_DEFINITIONS}")
       endif()
-      message(STATUS "Bullet Compile Definitions: ${BULLET_DEFINITIONS}")
+      message(STATUS "Bullet Double Compile Definitions: ${BULLET_DEFINITIONS}")
 
-      # This configuration ensures the Bullet variable definitions are
-      # also conformant.
-      add_library(Bullet::Bullet_double INTERFACE IMPORTED)
-      set_target_properties(Bullet::Bullet_double
+      # This configuration ensures the Bullet variable definitions are also conformant.
+      # It also set to work with the ISIS system.
+      add_library( Bullet::Bullet_double INTERFACE IMPORTED )
+      set(BULLET_INCLUDE_DIR ${BULLET_INCLUDE_DIRS})
+      prepend_root_dir("${BULLET_INCLUDE_DIR}"    "${BULLET_ROOT_DIR}"     BULLET_INCLUDE_DIR)
+      prepend_root_dir("${BULLET_LIBRARY_DIRS}"   "${BULLET_ROOT_DIR}"     BULLET_LIBRARY_DIRS)
+      get_full_library_path("${BULLET_LIBRARIES}" "${BULLET_LIBRARY_DIRS}" BULLET_LIBRARIES)
+      
+      set_target_properties( Bullet::Bullet_double
         PROPERTIES
           INTERFACE_COMPILE_DEFINITIONS "${BULLET_DEFINITIONS}"
-          INTERFACE_INCLUDE_DIRECTORIES "${BULLET_ROOT_DIR}/${BULLET_INCLUDE_DIRS}"
-          INTERFACE_LINK_DIRECTORIES "${BULLET_ROOT_DIR}/${BULLET_LIBRARY_DIR}"
+          INTERFACE_INCLUDE_DIRECTORIES "${BULLET_INCLUDE_DIR}"
+          INTERFACE_LINK_DIRECTORIES "${BULLET_LIBRARY_DIRS}"
           INTERFACE_LINK_LIBRARIES "${BULLET_LIBRARIES}"
       )
       set(Bullet_double_FOUND TRUE)
-      message(STATUS "Bullet Target Created: Bullet::Bullet_double")
+      message(STATUS "Bullet Double Target Created/Confirmed: Bullet::Bullet_double")
+      message(STATUS "Bullet Includes:  ${BULLET_INCLUDE_DIR}")
+      message(STATUS "Bullet Libdirs:  ${BULLET_LIBRARY_DIRS}")
+      message(STATUS "Bullet Libraries: ${BULLET_LIBRARIES}")
     endif()
   endif()
 
