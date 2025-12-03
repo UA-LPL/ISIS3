@@ -24,7 +24,16 @@ Bullet::Bullet_double        # INTERFACE IMPORTED library target
 Bullet_double_FOUND          # Module found variable
 
 To add this target to ISIS, just append the Bullet::Bullet_double target
-to ALLLIBS variable in ISIS3/isis/CMakeLists.txt file.
+to ALLLIBS variable in ISIS3/isis/CMakeLists.txt file. This package
+config also produces ISIS compatible variables that can be used instead
+of the Bullet double target if preferred. However, the target is required
+to add the compile definitions in Bullet::Bullet_double target if not
+added explicitly in ISIS cmake system.
+
+BULLET_DEFINITIONS           # Bullet double compile flags
+BULLET_INCLUDE_DIR           # Include directory for Bullet
+BULLET_LIBRARY_DIRS          # Library directory for Bullet
+BULLET_LIBRARIES             # Absolute paths of all Bullet libraries
 ]=]
 
 function(prepend_root_dir ifile rootpath outvar)
