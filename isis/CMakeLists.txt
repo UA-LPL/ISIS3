@@ -122,6 +122,9 @@ endif()
 add_definitions( -DISISROOT="${CMAKE_SOURCE_DIR}" )
 add_definitions( -DISISBUILDDIR="${CMAKE_BINARY_DIR}" )
 
+# Special addition to enable unary binary functions
+add_definitions(-D_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION)
+
 message("CONFIGURATION")
 message("\tBUILD STATIC CORE: ${buildStaticCore}")
 message("\tBUILD TESTS: ${buildTests}")
