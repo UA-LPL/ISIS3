@@ -43,6 +43,8 @@ namespace Isis {
    *          files.
    * @history 2010-10-28 Kris Becker Renamed parameters replacing "Zb" with
    *            "ZeroDark"
+   * @history 2026-01-19 Kris Becker - Removed "scale" variable from dark
+   *            correction.
    *
    */
   class ZeroDark : public Module {
@@ -123,11 +125,9 @@ namespace Isis {
 
         HiVector dc(samples);
         double linetime = ToDouble(prof("ScanExposureDuration"));
-        double scale = linetime * 1.0E-6 * (_bin*_bin) *
-                       (20.0*103.0/89.0 + _tdi);
         double baseT = HiTempEqn(_refTemp);
         for (int j = 0 ; j < samples ; j++) {
-          dc[j] = _BM[j] * scale * HiTempEqn(_tempProf[j]) / baseT;
+          dc[j] = _BM[j] * HiTempEqn(_tempProf[j]) / baseT;
         }
 
         //  Filter it yet again
