@@ -10,7 +10,7 @@ void LineNumber(Buffer &in, Buffer &out);
 void SampleNumber(Buffer &in, Buffer &out);
 void CheckerBoard(Buffer &in, Buffer &out);
 
-int size;
+int size_c;
 
 void IsisMain() {
   // We will be processing by line
@@ -35,10 +35,10 @@ void IsisMain() {
   }
   if(option == "CHECKERBOARD") {
     if(ui.WasEntered("SIZE")) {
-      size = ui.GetInteger("SIZE");
+      size_c = ui.GetInteger("SIZE");
     }
     else {
-      size = 5;
+      size_c = 5;
     }
     p.StartProcess(CheckerBoard);
   }
@@ -66,8 +66,8 @@ void SampleNumber(Buffer &in, Buffer &out) {
 }
 void CheckerBoard(Buffer &in, Buffer &out) {
   for(int i = 0; i < in.size(); i++) {
-    if((i % (2 * size) >= size && in.Line() % (2 * size) >= size) ||
-        (i % (2 * size) < size && in.Line() % (2 * size) < size)) {
+    if((i % (2 * size_c) >= size_c && in.Line() % (2 * size_c) >= size_c) ||
+        (i % (2 * size_c) < size_c && in.Line() % (2 * size_c) < size_c)) {
       out[i] = 0;
     }
     else {

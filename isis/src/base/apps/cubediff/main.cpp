@@ -32,7 +32,7 @@ struct Difference {
 double tolerance;
 bool filesEqual = true;
 bool firstDifferenceFound = false; // Set to true when first DN value difference is found
-int sample, line, band, spCount, diffCount, colWidth;
+int sample_i, line, band, spCount, diffCount, colWidth;
 Statistics stats;
 bool doTable;
 unsigned int sigFigAccuracy = DBL_DIG; // DBL_DIG is maximum accuracy for a double
@@ -86,7 +86,7 @@ void IsisMain() {
   }
   else {
     results += PvlKeyword("Compare", "Different");
-    results += PvlKeyword("Sample", toString(sample));
+    results += PvlKeyword("Sample", toString(sample_i));
     results += PvlKeyword("Line", toString(line));
     results += PvlKeyword("Band", toString(band));
     if(stats.TotalPixels() < 1) {
@@ -221,7 +221,7 @@ void compare(vector<Buffer *> &in, vector<Buffer *> &out) {
 
       if(!firstDifferenceFound) {
         firstDifferenceFound = true;
-        sample = input1.Sample(index);
+        sample_i = input1.Sample(index);
         line = input1.Line(index);
         band = input1.Band(index);
       }
