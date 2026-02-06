@@ -43,8 +43,6 @@ namespace Isis {
    *          files.
    * @history 2010-10-28 Kris Becker Renamed parameters replacing "Zb" with
    *            "ZeroDark"
-   * @history 2026-01-19 Kris Becker - Removed "scale" variable from dark
-   *            correction.
    *
    */
   class ZeroDark : public Module {
@@ -74,13 +72,9 @@ namespace Isis {
       HiVector _slope;
       HiVector _intercept;
       HiVector _tempProf;
-      double   _napcm2;
-
-      double _temp;
-      double _refTemp;
-      double _gain;
       HiVector _dc;
-      HiVector scale;
+
+      double _refTemp;
 
       Statistics _stats;
 
@@ -97,19 +91,8 @@ namespace Isis {
         _slope = loadCsv("DarkSlope", conf, prof, 256);
         _intercept = loadCsv("DarkIntercept", conf, prof, 256);
 
-        // Read the Silicon diode temperature CSV
-        HiVector v_napcm2  = loadCsv("SiliconDiodeDC", conf, prof, 1);
-        _napcm2 = v_napcm2[0];
-        _history.add("SiliconDiodeDC[" + ToString(_napcm2) + "]");
-
-        // Read the gain values
-        HiVector z = loadCsv("AbsoluteGains", conf, prof, 1);
-         _gain = z[0];
-        _history.add("AbsoluteGain[" + ToString(_gain) + "]");
-
         // Get temperation normalization factor
         _refTemp = toDouble(ConfKey(prof, "FpaReferenceTemperature", toString(37.0)));
-        _history.add("FpaReferenceTemperature[" + ToString(_refTemp) + "]");
 
         //  Smooth/filter if requested
         int width =  toInt(ConfKey(prof,"ZeroDarkFilterWidth",toString(3)));
@@ -117,11 +100,11 @@ namespace Isis {
         LowPassFilter smooth(width, iters);
         _history.add("Smooth(Width["+ToString(width)+"],Iters["+ToString(iters)+"])");
 
-        //  Set average tempuratures
+        //  Set average temperatures
         double fpa_py_temp = ToDouble(prof("FpaPositiveYTemperature"));
         double fpa_my_temp = ToDouble(prof("FpaNegativeYTemperature"));
-        _temp = (fpa_py_temp+fpa_my_temp) / 2.0;
-        _history.add("BaseTemperature(_temp)[" + ToString(_temp) + "]");
+        double _temp = (fpa_py_temp+fpa_my_temp) / 2.0;
+        _history.add("BaseTemperature[" + ToString(_temp) + "]");
 
         //  Filter the slope/intercept
         smooth.Process(_slope);
@@ -140,16 +123,14 @@ namespace Isis {
                      ToString(samples) +")");
 
         _dc = HiVector(samples);
-        scale = HiVector(samples);
-
         double linetime = ToDouble(prof("ScanExposureDuration"));
-        double baseT = HiTempEqn(_refTemp, _napcm2 );
+        double scale = linetime * 1.0E-6 * _tdi;
+        double baseT = HiTempEqn(_refTemp);
         _history.add("BaseT(HiTempEqn)[" + ToString(baseT) + "]");
+        _history.add("scale[" + ToString(scale) + "]");
 
         for (int j = 0 ; j < samples ; j++) {
-          scale[j] = _gain * linetime * 1.0E-6 * (_bin*_bin) *
-                    (20.0 / _bin * 103.0/89.0 + _tdi);          
-          _dc[j] = _BM[j] * scale[j] * HiTempEqn(_temp, _napcm2 ) / baseT;
+          _dc[j] = _BM[j] * scale * HiTempEqn(_temp) / baseT;
         }
 
         //  Filter it yet again
@@ -172,16 +153,12 @@ namespace Isis {
         o << "#  History = " << _history << std::endl;
         //  Write out the header
         o << std::setw(_fmtWidth)   << "DarkMatrix"
-          << std::setw(_fmtWidth+1) << "TempProf"
-          << std::setw(_fmtWidth+1) << "dc"
-          << std::setw(_fmtWidth+1) << "scale"
+          << std::setw(_fmtWidth+1) << "_dc"
           << std::setw(_fmtWidth+1) << "ZeroDark\n";
 
         for (int i = 0 ; i < _data.dim() ; i++) {
           o << formatDbl(_BM[i]) << " "
-            << formatDbl(_tempProf[i]) << " "
             << formatDbl(_dc[i]) << " "
-            << formatDbl(scale[i]) << " "
             << formatDbl(_data[i]) << std::endl;
         }
         return;
