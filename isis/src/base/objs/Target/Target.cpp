@@ -79,7 +79,7 @@ namespace Isis {
 
       *m_systemCode = (*m_bodyCode/100)*100 + 99;
 
-      SpiceChar naifBuf[40];
+      SpiceChar naifBuf[40] = { "unknown" };
       SpiceBoolean found;
       bodc2n_c((SpiceInt) *m_systemCode, sizeof(naifBuf), naifBuf, &found);
       NaifStatus::CheckErrors();
@@ -95,6 +95,9 @@ namespace Isis {
     if (kernels.hasKeyword("NaifBodyCode")) {
       *m_bodyCode = (int) kernels["NaifBodyCode"];
     }
+
+    // Gotta do this for shape models that need radii for reference ellipsoids
+    if ( !m_sky ) m_radii = spice->body_radii( *m_bodyCode );    
     m_shape = ShapeModelFactory::create(this, lab);
   }
 

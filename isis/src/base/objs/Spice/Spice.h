@@ -279,6 +279,9 @@ namespace Isis {
    *  @history 2021-02-17 Kristin Berry, Jesse Mapel, and Stuart Sides - Made several methods virtual,
    *                           moved several member variables to protected, and added initialization
    *                           path for a sensor model without SPICE data.
+   *  @history 2026-05-27 Kris J. Becker - Added body_radii() method to address issue in of 
+   *                           uninitialized/unavailble radii in create of ShapeModel in the 
+   *                           Target object
    */
   class Spice {
     public:
@@ -302,6 +305,7 @@ namespace Isis {
       virtual iTime time() const;
 
       void radii(Distance r[3]) const;
+      std::vector<Distance> body_radii( const SpiceInt bodyCode );      
 
       virtual void createCache(iTime startTime, iTime endTime,
                                const int size, double tol);
