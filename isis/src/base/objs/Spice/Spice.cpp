@@ -1166,7 +1166,7 @@ namespace Isis {
     QString radiiKey = "BODY" + Isis::toString( bodyCode ) + "_RADII";
     std::vector<Distance> radii(3,Distance());
 
-    auto kernel_fetch = [&]( const QString &key, const SpiceInt index, Distance &d ) ->bool {
+    auto fetch_radius = [&]( const QString &key, const SpiceInt index, Distance &d ) ->bool {
     // This is the success status of the NAIF call
       SpiceBoolean found = SPICEFALSE;
       SpiceInt numValuesRead;
@@ -1195,9 +1195,9 @@ namespace Isis {
     };
 
     try {
-      kernel_fetch ( radiiKey, 0, radii[0] );
-      kernel_fetch ( radiiKey, 1, radii[1] );
-      kernel_fetch ( radiiKey, 2, radii[2] );
+      fetch_radius ( radiiKey, 0, radii[0] );
+      fetch_radius ( radiiKey, 1, radii[1] );
+      fetch_radius ( radiiKey, 2, radii[2] );
     }
     catch ( const IException &ie ) {
       QString mess = "Spice::body_radii() - failed to get radii for body code " + toString( bodyCode );
