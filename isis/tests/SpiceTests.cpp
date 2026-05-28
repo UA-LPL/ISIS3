@@ -186,6 +186,11 @@ TEST_F(ConstVelIsd, TestSpiceFromIsd) {
 
   EXPECT_DOUBLE_EQ(testSpice.solarLongitude().positiveEast(), 3.1415926535897931);
 
+  std::vector<Distance> b_radii = testSpice.body_radii( 301 );
+  EXPECT_EQ(b_radii.size(), size_t(3));
+  EXPECT_DOUBLE_EQ(radii[0].kilometers(), b_radii[0].kilometers());
+  EXPECT_DOUBLE_EQ(radii[1].kilometers(), b_radii[1].kilometers());
+  EXPECT_DOUBLE_EQ(radii[2].kilometers(), b_radii[2].kilometers());
 }
 
 TEST_F(ConstVelIsd, SunToBodyDist) {
