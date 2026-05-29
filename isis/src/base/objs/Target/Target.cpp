@@ -96,8 +96,12 @@ namespace Isis {
       *m_bodyCode = (int) kernels["NaifBodyCode"];
     }
 
-    // Gotta do this for shape models that need radii for reference ellipsoids
-    if ( !m_sky ) m_radii = spice->body_radii( *m_bodyCode );    
+    // Gotta do this for shape models that need radii for reference ellipsoids.
+    // Note if the spice pointer is null (i.e., old unit tests), then don't 
+    // make the call.
+    if ( nullptr != spice ) {
+      if ( !m_sky ) m_radii = spice->body_radii( *m_bodyCode );    
+    }
     m_shape = ShapeModelFactory::create(this, lab);
   }
 
