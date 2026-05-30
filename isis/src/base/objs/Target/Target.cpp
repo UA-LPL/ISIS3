@@ -79,29 +79,28 @@ namespace Isis {
 
       *m_systemCode = (*m_bodyCode/100)*100 + 99;
 
-      SpiceChar naifBuf[40] = { "unknown" };
+      SpiceChar naifBuf[40];
       SpiceBoolean found;
       bodc2n_c((SpiceInt) *m_systemCode, sizeof(naifBuf), naifBuf, &found);
       NaifStatus::CheckErrors();
       string s(naifBuf);
       (*m_systemName).append(s.c_str());
 
-      // QString radiiKey = "BODY" + QString((BigInt) naifBodyCode()) + "_RADII";
-      // m_radii[0] = Distance(getDouble(radiiKey, 0), Distance::Kilometers);
-      // m_radii[1] = Distance(getDouble(radiiKey, 1), Distance::Kilometers);
-      // m_radii[2] = Distance(getDouble(radiiKey, 2), Distance::Kilometers);
+
     }
     // Override it if it exists in the labels
     if (kernels.hasKeyword("NaifBodyCode")) {
       *m_bodyCode = (int) kernels["NaifBodyCode"];
     }
-
-    // Gotta do this for shape models that need radii for reference ellipsoids.
-    // Note if the spice pointer is null (i.e., old unit tests), then don't 
-    // make the call.
+    
+    // Ensure the reference ellipsoid radii are present for ShapeModels
     if ( nullptr != spice ) {
-      if ( !m_sky ) m_radii = spice->body_radii( *m_bodyCode );    
+      QString radiiKey = "BODY" + toString( *m_bodyCode ) + "_RADII";
+      m_radii[0] = Distance( spice->getDouble(radiiKey, 0), Distance::Kilometers);
+      m_radii[1] = Distance( spice->getDouble(radiiKey, 1), Distance::Kilometers);
+      m_radii[2] = Distance( spice->getDouble(radiiKey, 2), Distance::Kilometers);      
     }
+
     m_shape = ShapeModelFactory::create(this, lab);
   }
 

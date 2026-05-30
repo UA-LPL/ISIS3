@@ -1150,63 +1150,6 @@ namespace Isis {
   }
 
   /**
-   * @brief This method is needed for getting radii in Target initialization
-   * 
-   * This method is provided to retrieve the target body radii of any target
-   * body that is active in SPICE or stored in the naif_keywords group. 
-   * 
-   * During the intialization of the Target object, the radii is unavailable
-   * which causes issues in the creation of ShapeModels, occuring in Target
-   * construction, that is needed to store a reference ellipsoid.
-   * 
-   * @param bodyCode   NAIF body code of the target body
-   * @return std::vector<Distance> Vector of PCK target radii
-   */
-  std::vector<Distance> Spice::body_radii( const SpiceInt bodyCode ) {
-    QString radiiKey = "BODY" + Isis::toString( bodyCode ) + "_RADII";
-    std::vector<Distance> radii(3,Distance());
-
-    auto fetch_radius = [&]( const QString &key, const SpiceInt index, Distance &d ) ->bool {
-    // This is the success status of the NAIF call
-      SpiceBoolean found = SPICEFALSE;
-      SpiceInt numValuesRead;
-      SpiceDouble kernelValue;
-      gdpool_c(key.toLatin1().data(), index, 1,
-                &numValuesRead, &kernelValue, &found);
-
-      if ( found == SPICETRUE ) {
-        d = Distance( kernelValue, Distance::Kilometers);
-      }
-      else {
-        QVariant result = readStoredValue( key, SpiceDoubleType, index );
-        if ( result.isValid() ) {
-          d = Distance( result.toDouble(), Distance::Kilometers);
-          found = SPICETRUE;
-        }
-      }
-
-      // Throw an error if not found
-      if ( SPICETRUE != found ) {
-        QString mess = radiiKey + " value not found at index " + toString( index );
-        throw IException( IException::Programmer, mess, _FILEINFO_ );
-      }
-      
-      return ( found == SPICETRUE );
-    };
-
-    try {
-      fetch_radius ( radiiKey, 0, radii[0] );
-      fetch_radius ( radiiKey, 1, radii[1] );
-      fetch_radius ( radiiKey, 2, radii[2] );
-    }
-    catch ( const IException &ie ) {
-      QString mess = "Spice::body_radii() - failed to get radii for body code " + toString( bodyCode );
-      throw IException( ie, IException::Programmer, mess, _FILEINFO_ );
-    }
-    return ( radii );
-  }
-
-  /**
    * This returns the NAIF body code of the target indicated in the labels.
    *
    * @return @b SpiceInt NAIF body code
