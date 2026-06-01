@@ -94,7 +94,7 @@ namespace Isis {
     }
     
     // Ensure the reference ellipsoid radii are present for ShapeModels
-    if ( nullptr != spice ) {
+    if ( !m_sky && ( nullptr != spice ) ) {
       QString radiiKey = "BODY" + toString( *m_bodyCode ) + "_RADII";
       m_radii[0] = Distance( spice->getDouble(radiiKey, 0), Distance::Kilometers);
       m_radii[1] = Distance( spice->getDouble(radiiKey, 1), Distance::Kilometers);
