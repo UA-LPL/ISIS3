@@ -188,10 +188,12 @@ namespace Isis {
         QString modelPath = dem[0];
         FileName modelFile(modelPath);
 
+#if 0        
         if (!modelFile.fileExists()) {
           QString msg = "Shape model file [" + modelPath + "] does not exist";
           throw IException(IException::User, msg, _FILEINFO_);
         }
+#endif        
       }
       else if (ui.GetString("SHAPE") == "SYSTEM") {
         dem = baseKernels.dem(lab);
