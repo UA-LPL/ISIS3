@@ -22,6 +22,7 @@ include(TestSetup)
 include(InstallThirdParty)
 
 include(CMakePrintHelpers)
+include(FetchContent)
 
 #===============================================================================
 #===============================================================================
@@ -306,6 +307,18 @@ find_package(Armadillo         REQUIRED)
 find_package(Threads)
 find_package(inja              REQUIRED)
 
+set(PSMRTS_BUILD_APPS      ON)
+set(PSMRTS_BUILD_CAPI_APPS ON)
+set(PSMRTS_BUILD_SHARED    ON)
+FetchContent_Declare(
+  psmrts
+  GIT_REPOSITORY https://github.com/UA-LPL/psmrts.git
+  # GIT_TAG        3712a77078ceac14b5f657a5941be77ffa84a00c
+  GIT_TAG        feature/psmrts-isis-tracer
+ )
+FetchContent_MakeAvailable(psmrts)
+
+
 # Setup for googletest/googlemock before adding SensorUtilities so we build its tests
 if(buildTests)
   set(INSTALL_GTEST OFF)
@@ -379,7 +392,7 @@ foreach (_variableName ${_variableNames})
 endforeach()
 
 # add target based linkages to ALLLIBS variable
-list(APPEND ALLLIBS pantor::inja sensorutilities protobuf::libprotobuf embree GDAL::GDAL Bullet::Bullet_double CSPICE::cspice)
+list(APPEND ALLLIBS pantor::inja sensorutilities protobuf::libprotobuf embree GDAL::GDAL Bullet::Bullet_double CSPICE::cspice psmrts)
 
 list(APPEND ALLLIBS ${OpenCV_LIBS})
 list(APPEND ALLINCDIRS ${OpenCV_INCLUDE_DIRS})
