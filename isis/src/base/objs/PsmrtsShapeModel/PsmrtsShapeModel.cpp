@@ -743,8 +743,27 @@ namespace Isis {
       return ( nullptr );
     }
 
+    auto print_vector = [&] ( const std::string &tag, auto &v ) { 
+      std::cout << tag;
+      for ( const auto &v_t : v ) {
+        std::cout << " " << v_t;
+      }
+      std::cout << std::endl;
+    };
+
     // Success! Return the shape model.
     std::cout << "PsmrtsShapeModel::create() done!" << std::endl;
+    std::cout << "FactoryShapeCount:  " << psmrts::PsmrtsFactory().shapes().size() << std::endl;
+    std::cout << "FactoryTracerCount: " << psmrts::PsmrtsFactory().tracers().size() << std::endl;
+    print_vector( "TracerIds: ", model_t->tracer_system().get_shape_tracer().tracers() );
+    for ( const auto uid : model_t->tracer_system().get_shape_tracer().tracers() ) {
+      std::cout << "TracerUid: " << uid << std::endl;
+      std::cout << "Name:      " << psmrts::PsmrtsFactory().tracers().find( uid ).name() << std::endl;
+      std::cout << "Type:      " << psmrts::PsmrtsFactory().tracers().find( uid ).type() << std::endl;
+      std::cout << "Model:     " << psmrts::PsmrtsFactory().tracers().find( uid ).model() << std::endl;
+      std::cout << "Config:    " << psmrts::PsmrtsFactory().tracers().find( uid ).config().to_json().dump(-1) << std::endl;
+      std::cout << "Tracer:    " << model_t->tracer_system().get_shape_tracer().inventory().find( uid ).name() << std::endl;
+    }
 
     return ( model_t );
   }
