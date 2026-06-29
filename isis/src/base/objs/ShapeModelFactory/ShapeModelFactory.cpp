@@ -157,7 +157,6 @@ namespace Isis {
       const bool PsmrtsThrowOnError = false;
       PsmrtsShapeModel *model_p = PsmrtsShapeModel::create( target, pvl, PsmrtsThrowOnError );
       if ( nullptr != model_p ) return ( model_p );
-      std::cout << "Did not get a PSMRTS model!" << std::endl;
 
       //-------------- Check for bullet engine first -------------------------------//
       if ( "bullet" == preferred ) {
