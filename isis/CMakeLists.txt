@@ -5,7 +5,7 @@
 
 # Specify the required version of CMake.  If your machine does not
 #  have this, it should be easy to build from https://cmake.org/download/
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.24)
 
 # Point cmake to our other CMake files.
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
@@ -22,7 +22,6 @@ include(TestSetup)
 include(InstallThirdParty)
 
 include(CMakePrintHelpers)
-include(FetchContent)
 
 #===============================================================================
 #===============================================================================
@@ -307,16 +306,9 @@ find_package(Armadillo         REQUIRED)
 find_package(Threads)
 find_package(inja              REQUIRED)
 
-set(PSMRTS_BUILD_APPS      ON)
-set(PSMRTS_BUILD_CAPI_APPS ON)
-set(PSMRTS_BUILD_SHARED    ON)
-FetchContent_Declare(
-  psmrts
-  GIT_REPOSITORY https://github.com/UA-LPL/psmrts.git
-  # GIT_TAG        3712a77078ceac14b5f657a5941be77ffa84a00c
-  GIT_TAG        feature/psmrts-isis-tracer
- )
-FetchContent_MakeAvailable(psmrts)
+# Install/configure PSMRTS system
+include(psmrts_system)
+find_package(psmrts REQUIRED)
 
 
 # Setup for googletest/googlemock before adding SensorUtilities so we build its tests
