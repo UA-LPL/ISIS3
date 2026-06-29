@@ -87,6 +87,8 @@ namespace Isis {
     
       bool isDEM() const;
 
+      int plate_index() const;
+
       /** Return the composite tracer system reference */
       inline const psmrts::PsmrtsTracerSystem &tracer_system() const {
         return ( m_tracer_s );
