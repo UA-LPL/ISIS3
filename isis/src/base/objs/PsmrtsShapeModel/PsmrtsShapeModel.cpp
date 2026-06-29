@@ -35,7 +35,8 @@ namespace Isis {
                                      m_shape_ray_t(),
                                      m_ellipsoid_ray_t(),
                                      m_tracer_s( "isis" ),
-                                     m_tolerance( DefaultDistanceTolerance ) {
+                                     m_tolerance( DefaultDistanceTolerance ),
+                                     m_psmrts_debug( false ) {
     // defaults for ShapeModel parent class include:
     //     name = empty string
     //     surfacePoint = null sp
@@ -54,39 +55,61 @@ namespace Isis {
    * This constructor is typically used for and ISIS cube that has been
    * initialized by spiceinit.  The DEM name should be that of a NAIF DSK file.
    * This constructor will throw an exception if it fails to open the DSK file.
+   * 
+   * The "parameters" can provided content that overrides shape model
+   * preferences in a user specified (or the default state) preferences files
+   * such as IsisPreferences. If there is no content in "parameters", it will
+   * load ISIS preferences and apply the contents otherwise it will not load
+   * preferencs and overide values in the preferecnes state.
    *
-   * @author 2014-02-12 Kris Becker
+   * @author 2026-05-10 Kris Becker
    *
-   * @param target Target object describing the observed body
-   * @param pvl    ISIS Cube label.  Extract the name of the DEM from the Kernels
-   *               group
+   * @param target     Target object describing the observed body
+   * @param pvl        ISIS Cube label.  Extract the name of the DEM from the 
+   *                   Kernels group
+   * @param parameters Override IsisPreferences if this parameter has content.
    */
-  PsmrtsShapeModel::PsmrtsShapeModel(Target *target, Pvl &pvl) : 
-                                     ShapeModel(target),
-                                     m_parameters(),
-                                     m_shape_ray_t(),
-                                     m_ellipsoid_ray_t(),
-                                     m_tracer_s( ),
-                                     m_tolerance( DefaultDistanceTolerance ) {
+  PsmrtsShapeModel::PsmrtsShapeModel( Target *target, Pvl &pvl,
+                                      const PvlFlatMap &parameters ) : 
+                                      ShapeModel(target),
+                                      m_parameters(),
+                                      m_shape_ray_t(),
+                                      m_ellipsoid_ray_t(),
+                                      m_tracer_s( ),
+                                      m_tolerance( DefaultDistanceTolerance ),
+                                      m_psmrts_debug( false ) {
+
+    // Debug preferences
+
+    PvlFlatMap psmrts_p = parameters;
+    if ( psmrts_p.size() == 0 ) psmrts_p = get_shapemodel_preferences();
+
+    m_psmrts_debug = toBool( psmrts_p.get( "PsmrtsDebug", "false" ) );
+    // m_psmrts_debug = toBool( psmrts_p.get( "PsmrtsDebug", "true" ) );
+
+    if ( m_psmrts_debug ) std::cout << "ISIS/PSMRTS Constructor running..." << std::endl;
 
     setName("PSMRTS");
-    std::cout << "ISIS/PSMRTS Constructor running..." << std::endl;
-
     std::string name_t = qt_to_string( get_file_name( pvl, "isis_label" ) );
     m_tracer_s = psmrts::PsmrtsTracerSystem( name_t, 
                                              create_isis_path_translator( "isisdata" ) );
 
     PvlGroup &kernels = pvl.findGroup("Kernels", Pvl::Traverse);
     PvlFlatMap kmap_t = PvlFlatMap( kernels );
+    
+    // Load the shape model preferences and override labels if specifed
+    bool pref_shapemodel_override = toBool( psmrts_p.get("PsmrtsShapeModelOverride", "false" ) );
+    if ( true == pref_shapemodel_override ) {
+      kmap_t.merge( psmrts_p );
+    }
 
     if ( kmap_t.exists("ElevationModel") ) {
       m_parameters.add( keyword_vector( "ShapeModel", kmap_t.allValues( "ElevationModel") ) );
     }
     else { // if (kernels.hasKeyword("ShapeModel")) {
-      m_parameters.add( kernels["ShapeModel"] );
+      m_parameters.add( keyword_vector( "ShapeModel", kmap_t.allValues( "ShapeModel") ) );
     }
 
-    PvlFlatMap psmrts_p = get_shapemodel_preferences();
     try {
       if ( m_parameters.count( "ShapeModel") == 1 ) {
         QString fext = FileName( m_parameters.get( "ShapeModel" ) ).extension();
@@ -111,6 +134,7 @@ namespace Isis {
                      ") for cube " + QString::fromStdString( name_t );
       throw IException( ie, IException::User, mess, _FILEINFO_ );      
     }
+
 
     // Convert the shape model list to a std:vector<std::string> list
     std::vector<std::string> v_shapefiles;
@@ -173,6 +197,7 @@ namespace Isis {
 
     // Update the labels with PSMRTS data/info
     psmrts_p.add( "RayTraceEngine", "psmrts" );
+    m_parameters = psmrts_p;
     if ( !psmrtsUpdateIsisLabel( pvl, psmrts_p ) ) {
       QString mess = "Failed to update ISIS labels in cube " + QString::fromStdString( name_t );
       throw IException( IException::User, mess, _FILEINFO_ );
@@ -180,7 +205,7 @@ namespace Isis {
 
     // Set up for tracing
     clearSurfacePoint();
-    std::cout << "PsmrtsShapeModel constructor done!" << std::endl;
+    if ( m_psmrts_debug) std::cout << "PsmrtsShapeModel constructor done!" << std::endl;
   }
 
 
@@ -197,15 +222,18 @@ namespace Isis {
    * @param model DSK plate model from an existing NaidDskPlateModel (see the
    *              model() method
    */
-  PsmrtsShapeModel::PsmrtsShapeModel(const psmrts::PsmrtsTracerSystem &tracer_s ) :
+  PsmrtsShapeModel::PsmrtsShapeModel(const psmrts::PsmrtsTracerSystem &tracer_s,
+                                     const PvlFlatMap &parameters ) :
                                      ShapeModel(),
-                                     m_parameters(),
+                                     m_parameters( parameters ),
                                      m_shape_ray_t(),
                                      m_ellipsoid_ray_t(),
                                      m_tracer_s( tracer_s ),
-                                     m_tolerance( DefaultDistanceTolerance ) {
+                                     m_tolerance( DefaultDistanceTolerance ),
+                                     m_psmrts_debug( false ) {
 
     setName("PSMRTS");
+    m_psmrts_debug = toBool( m_parameters.get( "PsmrtsDebug", "false" ) );
     clearSurfacePoint();
   }
 
@@ -519,41 +547,10 @@ namespace Isis {
     return false;
   }
 
-  /**
-   * @brief Set computed surface point
-   * 
-   * This method appears to have limited use in ISIS. It is used in the
-   * RadarGroundMap that determines the lat/lon and then computes the surface
-   * intersect at that location using localRadius() from this model. The issue
-   * is that it does not provide the observer location so we cannot provide the
-   * surface normal. 
-   * 
-   * So we must recompute the surface point from that ray through the lat/lon
-   * coordinate and save that result to state for further computations.
-   * 
-   * @param surfacePoint Surface point of intersection.
-   */
-  void PsmrtsShapeModel::setSurfacePoint( const SurfacePoint &surfacePoint ) {
-
-    ShapeModel::clearSurfacePoint();    
-    this->reset_all_rays();
-
-    m_shape_ray_t =  getSurfaceLatLonRadius( surfacePoint.GetLatitude(),
-                                             surfacePoint.GetLongitude(),
-                                             m_tracer_s.get_shape_tracer() );
-    m_ellipsoid_ray_t =  getSurfaceLatLonRadius( surfacePoint.GetLatitude(),
-                                                 surfacePoint.GetLongitude(),
-                                                 m_tracer_s.get_ellipsoid_tracer() );                                             
-    updateTraceState( m_shape_ray_t, m_ellipsoid_ray_t );
-    return;
-  }  
-
   //----------------------------------------------------------------------------
   //  Creator methods used in generation of a PsmrtsShapeModel from different
   //  sources.
   //----------------------------------------------------------------------------
-
-
 
   bool PsmrtsShapeModel::load_shape_list( const QString &shapelist_f, 
                                           PvlFlatMap &flat_p ) const {
@@ -609,8 +606,7 @@ namespace Isis {
       
 
   bool PsmrtsShapeModel::psmrtsUpdateIsisLabel( Pvl &pvl, 
-                                                const PvlFlatMap &psmrts_data ) 
-                                                const { 
+                                                const PvlFlatMap &psmrts_data ) { 
 
     PvlGroup &kernels = pvl.findGroup("Kernels", Pvl::Traverse);
     std::vector<QString> keys_p = { "ShapeModel", "RayTraceEngine", 
@@ -704,19 +700,29 @@ namespace Isis {
                                               const bool throw_errors ) {
 
     PsmrtsShapeModel *model_t( nullptr );
-    std::cout << "PsmrtsShapeModel::create()..." << std::endl;
+
+    // Load the shape model preferences
+    PvlFlatMap preferences_t = get_shapemodel_preferences();
+    bool pref_shapemodel_override = toBool( preferences_t.get("PsmrtsShapeModelOverride", "false" ) );
 
     // First check the RayTraceEngine setting in the ISIS configuration file.
     // If it has anything other than RayTraceEngine = "psmrts", return a NULL
     // pointer and let ShapeModelFactory continue on.
     bool psmrts_requested = false;
     PvlFlatMap config = extract_pvl_group( pvl, "Kernels" );
-    if ( !config.exists( "RayTraceEngine" ) ) {
-      config = get_shapemodel_preferences();
+    if ( !config.exists( "RayTraceEngine" ) || ( true == pref_shapemodel_override ) ) {
+      config = preferences_t;
     }
 
+    // Check for PSMRTS engine and allow PSMRT override mode if requested!
+    // Note this allows for changing of the ShapeModel using a preferences file.
+    // This provides a runtime, per-program swap out of shape model and ray
+    // tracing engine.
     if ( config.exists( "RayTraceEngine" ) ) {
       if ( config.get( "RayTraceEngine" ) != "psmrts" ) {
+        if ( true == pref_shapemodel_override ) {
+          PsmrtsShapeModel::psmrtsUpdateIsisLabel( pvl, preferences_t );
+        }
         return ( model_t );
       }
       psmrts_requested = true;
@@ -724,9 +730,10 @@ namespace Isis {
 
     try {
       // Pvl label will be updated upon success
-      model_t = new PsmrtsShapeModel( target, pvl );
+      model_t = new PsmrtsShapeModel( target, pvl, preferences_t );
     }
     catch ( const std::runtime_error &re ) {
+      // std::cout << "Did not get a PSMRTS model!" << std::endl;
       // Catch PSMRTS exceptions first
       if ( psmrts_requested || throw_errors ) {
         QString mess = "PsmrtsShapeModel::create() error occured: " + QString( re.what() );
@@ -735,6 +742,7 @@ namespace Isis {
       return ( nullptr );
     }
     catch ( const IException &ie ) {
+      // std::cout << "Did not get a PSMRTS model!" << std::endl;
       // ISIS exceptions
       if ( psmrts_requested || throw_errors ) {
         QString mess = "ISIS/PSMRTS shape model error occured in PsmrtsShapeModel";
@@ -746,26 +754,81 @@ namespace Isis {
     auto print_vector = [&] ( const std::string &tag, auto &v ) { 
       std::cout << tag;
       for ( const auto &v_t : v ) {
-        std::cout << " " << v_t;
+        std::cout << " " << v_t.uid();
       }
       std::cout << std::endl;
     };
 
     // Success! Return the shape model.
-    std::cout << "PsmrtsShapeModel::create() done!" << std::endl;
-    std::cout << "FactoryShapeCount:  " << psmrts::PsmrtsFactory().shapes().size() << std::endl;
-    std::cout << "FactoryTracerCount: " << psmrts::PsmrtsFactory().tracers().size() << std::endl;
-    print_vector( "TracerIds: ", model_t->tracer_system().get_shape_tracer().tracers() );
-    for ( const auto uid : model_t->tracer_system().get_shape_tracer().tracers() ) {
-      std::cout << "TracerUid: " << uid << std::endl;
-      std::cout << "Name:      " << psmrts::PsmrtsFactory().tracers().find( uid ).name() << std::endl;
-      std::cout << "Type:      " << psmrts::PsmrtsFactory().tracers().find( uid ).type() << std::endl;
-      std::cout << "Model:     " << psmrts::PsmrtsFactory().tracers().find( uid ).model() << std::endl;
-      std::cout << "Config:    " << psmrts::PsmrtsFactory().tracers().find( uid ).config().to_json().dump(-1) << std::endl;
-      std::cout << "Tracer:    " << model_t->tracer_system().get_shape_tracer().inventory().find( uid ).name() << std::endl;
+    if ( model_t->isDebug() || pref_shapemodel_override ) {
+      std::cout << "PsmrtsShapeModel::create() done!" << std::endl;
+      std::cout << "FactoryShapeCount:  " << psmrts::PsmrtsFactory().shapes().size() << std::endl;
+      std::cout << "FactoryTracerCount: " << psmrts::PsmrtsFactory().tracers().size() << std::endl;
+      print_vector( "TracerIds: ", model_t->tracer_system().get_shape_tracer().tracers() );
+      for ( const auto &tracer : model_t->tracer_system().get_shape_tracer().tracers() ) {
+        auto uid = tracer.uid();
+        std::cout << "TracerUid: " << uid << std::endl;
+        std::cout << "Name:      " << tracer.name() << std::endl;
+        std::cout << "Type:      " << tracer.type() << std::endl;
+        std::cout << "Model:     " << tracer.model() << std::endl;
+        std::cout << "Config:    " << tracer.config().to_json().dump(-1) << std::endl;
+        std::cout << "Tracer:    " << model_t->tracer_system().get_shape_tracer().inventory().find( uid ).name() << std::endl;
+      }
     }
 
     return ( model_t );
   }
+
+
+  /**
+   * @brief Update the internal state with the result of a ray trace 
+   * 
+   * This method updates the internal state of this shape model object with
+   * the results of the ray trace object. If the trace has a hit the surface
+   * point is updated with the surface point and normal data.
+   * 
+   * If the is no hit or an error occured, then the surface point is cleared.
+   * 
+   * Both shape and ellipsoid normals cannot be set unless the intecept point is
+   * set. However, if both intercept, this method sets the shape ray intercept
+   * point and not the ellipsoid. This may cause confusion.
+   * 
+   * The state of the result is returned to the caller.
+   * 
+   * @param ray   Shape model ray trace object to set 
+   * @param ray_e Ellipsoid ray trace object to set 
+   */
+  bool PsmrtsShapeModel::updateTraceState( const psmrts::PRQRayTrace &ray,
+                                            const psmrts::PRQRayTrace &ray_e ) {
+
+    SurfacePoint point;
+    clearSurfacePoint();
+
+    if ( ray.hasHit() ) {
+      setHasIntersection( ray.hasHit() ); 
+      point.FromNaifArray( ray.trace().xyz().data() );
+      ShapeModel::setSurfacePoint( point );
+
+      // Got the local normal so set it here
+      Eigen::Vector3d normal_l = ray.trace().normal();
+      setLocalNormal( normal_l[0], normal_l[1], normal_l[2] );
+    }
+
+    // Set the ellipsoid normal as well
+    if ( ray_e.hasHit() ) {
+      // If the shape model trace did not intersect, use the ellipsoid
+      if ( !point.Valid() ) {
+        setHasIntersection( ray_e.hasHit() ); 
+        point.FromNaifArray( ray_e.trace().xyz().data() );
+        ShapeModel::setSurfacePoint( point );
+      }
+
+      Eigen::Vector3d normal_e = ray_e.trace().normal();
+      setNormal( normal_e[0], normal_e[1], normal_e[2] );      
+    }
+    
+    return ( ray.hasHit() || ray_e.hasHit() );
+  }
+
 
 } // namespace Isis 

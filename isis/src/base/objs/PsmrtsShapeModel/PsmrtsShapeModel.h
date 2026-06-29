@@ -15,6 +15,7 @@ find files of those names at the top level of this repository. **/
 #include "Latitude.h"
 #include "Longitude.h"
 #include "Pvl.h"
+#include "PvlFlatMap.h"
 #include "SurfacePoint.h"
 
 #include <psmrts/tracers/PsmrtsTracerSystem.hpp>
@@ -40,8 +41,10 @@ namespace Isis {
 
       // Constructors
       PsmrtsShapeModel();
-      PsmrtsShapeModel(Target *target, Pvl &pvl);
-      PsmrtsShapeModel(const psmrts::PsmrtsTracerSystem &tracer_s );
+      PsmrtsShapeModel(Target *target, Pvl &pvl, 
+                       const PvlFlatMap &parameters = PvlFlatMap() );
+      PsmrtsShapeModel(const psmrts::PsmrtsTracerSystem &tracer_s, 
+                       const PvlFlatMap &parameters = PvlFlatMap() );
 
       // Destructor
       ~PsmrtsShapeModel();
@@ -64,7 +67,6 @@ namespace Isis {
       // Calculate the surface normal of the current intersection point
       void calculateDefaultlNormal();
       void calculateLocalNormal(QVector<double *> cornerNeighborPoints); // use default normal
-      // void calculateSurfaceNormal();
       void setLocalNormalFromIntercept();
 
 
@@ -85,24 +87,27 @@ namespace Isis {
     
       bool isDEM() const;
 
-      virtual void setSurfacePoint(const SurfacePoint &surfacePoint);
-
+      /** Return the composite tracer system reference */
       inline const psmrts::PsmrtsTracerSystem &tracer_system() const {
         return ( m_tracer_s );
       }
 
+      /** Return the shape model ray trace request object */
       inline const psmrts::PRQRayTrace &get_shape_trace() const {
         return ( m_shape_ray_t );
       }
 
+      /** Return the ellipsoid ray trace request object */
       inline const psmrts::PRQRayTrace &get_ellipsoid_trace() const {
         return ( m_ellipsoid_ray_t );
       }
 
+      /** Return the occlusion tolerance (km) */
       inline double get_tolerance() const {
         return ( m_tolerance );
       }
 
+      /** Set/reset the occlusion tolerance (km) */
       inline void set_tolerance( const double tolerance = DefaultDistanceTolerance ) {
         m_tolerance = tolerance;
         return;
@@ -147,6 +152,28 @@ namespace Isis {
       bool load_pvl_config( const QString &pvlconf_f, PvlFlatMap &flat_p ) const;
       bool load_shape_list( const QString &shapelist_f, PvlFlatMap &flat_p ) const;
 
+
+      /** Return a reference to the configuration keywords */
+      inline const PvlFlatMap &parameters() const {
+        return ( m_parameters );
+      }
+
+      /** Return PSMRTS debug status */
+      inline bool isDebug() const {
+        return ( m_psmrts_debug );
+      }
+
+      /** Set the PSMRTS debug status */
+      inline void set_debug( const bool p_debug = false ) {
+        m_psmrts_debug = p_debug;
+      }
+
+      /** Clear any tracer errors that may have occured */
+      inline void clear_errors( ) {
+        return ( m_tracer_s.clear_errors() );
+      }
+      
+
     private:
       // Disallow copying because ShapeModel is not copyable
       Q_DISABLE_COPY(PsmrtsShapeModel)
@@ -156,56 +183,18 @@ namespace Isis {
       psmrts::PRQRayTrace        m_ellipsoid_ray_t;
       psmrts::PsmrtsTracerSystem m_tracer_s;
       double                     m_tolerance;
+      bool                       m_psmrts_debug;
 
-      inline bool psmrtsUpdateIsisLabel( Pvl &pvl, const PvlFlatMap &psmrts_data ) const; 
+      static bool psmrtsUpdateIsisLabel( Pvl &pvl, const PvlFlatMap &psmrts_data ); 
  
+      /** Reset/reinit all ray trace states to default conditions */
       inline void reset_all_rays( ) {
         m_shape_ray_t.reset();
         m_ellipsoid_ray_t.reset();
       }
 
-      /**
-       * @brief Update the internal state with the result of a ray trace 
-       * 
-       * This method updates the internal state of this shape model object with
-       * the results of the ray trace object. If the trace has a hit the surface
-       * point is updated with the surface point and normal data.
-       * 
-       * If the is no hit or an error occured, then the surface point is cleared.
-       * 
-       * The state of the result is returned to the caller.
-       * 
-       * @param ray Ray trace object to set 
-       */
-      inline bool updateTraceState( const psmrts::PRQRayTrace &ray,
-                                    const psmrts::PRQRayTrace &ray_e = psmrts::PRQRayTrace( ) ) {
-        if ( ray.hasHit() ) {
-
-          setHasIntersection( ray.hasHit() ); 
-          SurfacePoint point;
-          point.FromNaifArray( ray.trace().xyz().data() );
-          ShapeModel::setSurfacePoint( point );
-
-          // Got the local normal so set it here
-          Eigen::Vector3d normal_l = ray.trace().normal();
-          setLocalNormal( normal_l[0], normal_l[1], normal_l[2] );
-
-          // Set the ellipsoid normal as well
-          if ( ray_e.hasHit() ) {
-            Eigen::Vector3d normal_e = ray_e.trace().normal();
-            setNormal( normal_e[0], normal_e[1], normal_e[2] );
-          }
-          else {
-            setNormal( normal_l[0], normal_l[1], normal_l[2] );
-          }
-        }
-        else {
-          clearSurfacePoint();
-        }
-
-        return ( ray.hasHit() );
-      }
-
+      bool updateTraceState( const psmrts::PRQRayTrace &ray,
+                             const psmrts::PRQRayTrace &ray_e = psmrts::PRQRayTrace( ) );
   };
 }
 
