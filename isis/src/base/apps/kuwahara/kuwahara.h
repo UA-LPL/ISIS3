@@ -6,15 +6,15 @@ find files of those names at the top level of this repository. **/
 
 /* SPDX-License-Identifier: CC0-1.0 */
 
-#include "Isis.h"
+#ifndef kuwahara_h
+#define kuwahara_h
 
-#include "maplab.h"
+#include "Cube.h"
+#include "UserInterface.h"
 
-#include "Application.h"
-
-using namespace Isis;
-
-void IsisMain() {
-  UserInterface &ui = Application::GetUserInterface();
-  maplab(ui);
+namespace Isis {
+  extern void kuwahara(UserInterface &ui);
+  extern void kuwahara(Cube *icube, UserInterface &ui);
 }
+
+#endif

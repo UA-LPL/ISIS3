@@ -10,7 +10,6 @@ find files of those names at the top level of this repository. **/
 
 #include <QString>
 #include <QtMath>
-#include <QFile>
 
 #include "AlphaCube.h"
 #include "Cube.h"
@@ -67,9 +66,10 @@ namespace Isis {
       Cube *outputCube = importer.SetOutputCube(ui.GetCubeName("TO"), att);
 
       QString transRawFile = "TgoCassisInstrument.trn";
-      QFile xmlFile(xmlFileName.expanded());
-      QDomDocument xmlDoc;
-      xmlDoc.setContent(&xmlFile, QDomDocument::ParseOption::UseNamespaceProcessing);
+
+      OriginalXmlLabel xmlLabel;
+      xmlLabel.readFromXmlFile(xmlFileName, true);
+      QDomDocument xmlDoc = xmlLabel.ReturnLabels();
       // If any instances of "Optical_Filter" or "Mission_Area" exist, use PSA .trn file
       QString transExportFile;
       if (!xmlDoc.elementsByTagName("Optical_Filter").isEmpty() &&
@@ -112,10 +112,7 @@ namespace Isis {
       }
 
       FileName outputCubeFileName(ui.GetCubeName("TO"));
-
-      OriginalXmlLabel xmlLabel;
       xmlLabel.readFromXmlFile(xmlFileName);
-
       importer.StartProcess();
 
       // Write out original label before closing the cube
@@ -213,12 +210,14 @@ namespace Isis {
     //Translate the Mapping Group
     try {
       QString missionDir = "$ISISROOT/appdata/translations/";
-      QDomDocument xmlDoc;
-      QFile xmlFile(xmlFileName.expanded());
-      xmlDoc.setContent(&xmlFile, QDomDocument::ParseOption::UseNamespaceProcessing);
+
+      OriginalXmlLabel xmlLabel;
+      xmlLabel.readFromXmlFile(xmlFileName, true);
+      QDomDocument xmlDoc = xmlLabel.ReturnLabels();
+
       // If any instances of "Observing_System_Component" exist, use PSA .trn file
       FileName mapTransFile;
-      if (xmlDoc.elementsByTagName("cart:a_axis_radius").size()){
+      if (xmlDoc.elementsByTagName("cart:a_axis_radius").size()) {
         mapTransFile = FileName(missionDir + "TgoCassisMapping_PSA.trn");
       } else {
         mapTransFile = FileName(missionDir + "TgoCassisMapping.trn");
@@ -250,25 +249,10 @@ namespace Isis {
    *                   updated.
    */
   bool translateMosaicLabel(FileName xmlFileName, Cube *outputCube) {
-    QDomDocument xmlDoc;
 
-    QFile xmlFile(xmlFileName.expanded());
-    if ( !xmlFile.open(QIODevice::ReadOnly) ) {
-      QString msg = "Could not open label file [" + xmlFileName.expanded() +
-                    "].";
-      throw IException(IException::Unknown, msg, _FILEINFO_);
-    }
-
-    QDomDocument::ParseResult result = xmlDoc.setContent(&xmlFile);
-    if ( !bool(result) ) {
-      xmlFile.close();
-      QString msg = "XML read/parse error in file [" + xmlFileName.expanded()
-          + "] at line [" + QString::number(result.errorLine) + "], column [" + QString::number(result.errorColumn)
-          + "], message: " + result.errorMessage;
-      throw IException(IException::Unknown, msg, _FILEINFO_);
-    }
-
-    xmlFile.close();
+    OriginalXmlLabel xmlLabel;
+    xmlLabel.readFromXmlFile(xmlFileName);
+    QDomDocument xmlDoc = xmlLabel.ReturnLabels();
 
     QDomElement inputParentElement = xmlDoc.documentElement();
     if (!inputParentElement.isNull()) {
@@ -343,6 +327,34 @@ namespace Isis {
     if (inst.hasKeyword("ExposureDuration")){
       inst.findKeyword("ExposureDuration").setUnits("seconds");
     }
+
+    // The PSA-exported calibrated products (em16_tgo_cas namespace) do not carry
+    // SpacecraftClockStartCount. Their fallback translation table fills only
+    // StartTime. The instrument-team products handled by TgoCassisInstrument.trn
+    // map this keyword from the FSW header, so it is already present for them.
+    // The camera (TgoCassisCamera) and spiceinit require it regardless of the
+    // product, so without it the PSA products fail to ingest. The clock value is
+    // present in the XML as a hex-ASCII em16_tgo_cas:exposuretimestamp field.
+    // Decode it and add the keyword here, so the PSA products work with no manual
+    // editlab step. The translation table alone cannot do this because it cannot
+    // hex-decode. Read the label through OriginalXmlLabel, the same VSI-aware path
+    // the rest of this app uses, so remote (/vsicurl) inputs work too.
+    if (!inst.hasKeyword("SpacecraftClockStartCount")) {
+      // Parse without namespace processing so the prefixed
+      // em16_tgo_cas:exposuretimestamp tag is matched as a literal name.
+      OriginalXmlLabel expLabel;
+      expLabel.readFromXmlFile(inputLabel);
+      QDomDocument expDoc = expLabel.ReturnLabels();
+      QDomNodeList tsNodes = expDoc.elementsByTagName("em16_tgo_cas:exposuretimestamp");
+      if (!tsNodes.isEmpty()) {
+        QString hexAscii = tsNodes.at(0).toElement().text().trimmed();
+        QString clockCount = QString::fromLatin1(QByteArray::fromHex(hexAscii.toLatin1()));
+        if (!clockCount.isEmpty()) {
+          inst.addKeyword(PvlKeyword("SpacecraftClockStartCount", clockCount));
+        }
+      }
+    }
+
     // Translate BandBin group
     FileName bandBinTransFile(missionDir + "TgoCassisBandBin.trn");
     XmlToPvlTranslationManager bandBinXlater(inputLabel, bandBinTransFile.expanded());
