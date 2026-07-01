@@ -8,8 +8,7 @@ set(PSMRTS_BUILD_SHARED    ON)
 FetchContent_Declare(
   psmrts
   GIT_REPOSITORY https://github.com/UA-LPL/psmrts.git
-  # GIT_TAG        3712a77078ceac14b5f657a5941be77ffa84a00c
-  GIT_TAG        feature/psmrts-isis-tracer
+  GIT_TAG        b85e10f56a0e3617be3f145cff93862706049491
   OVERRIDE_FIND_PACKAGE
 )
 
