@@ -1,8 +1,11 @@
 #include <gtest/gtest.h>
 #include <iostream>
 #include "FileList.h"
+#include "FileName.h"
 #include "IException.h"
 #include "TestUtilities.h"
+
+#include "cpl_vsi.h"
 
 TEST(FileList, NonExistantFileConstructor)
 {
@@ -44,6 +47,13 @@ TEST(FileList, FileNameConstructor)
   Isis::FileList fl1(input);
   fl1.write(output);
   EXPECT_STREQ(expectedOutput.c_str(), output.str().c_str());
+}
+
+// Reading a nonexistent VSI path throws an IException rather than crashing.
+TEST(FileList, VsiMissingFileThrows)
+{
+  Isis::FileList fl;
+  EXPECT_THROW(fl.read(Isis::FileName("/vsimem/does_not_exist.lis")), Isis::IException);
 }
 
 TEST(FileList, FileNameNoNewLine)

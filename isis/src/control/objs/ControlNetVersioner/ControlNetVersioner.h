@@ -502,6 +502,9 @@ namespace Isis {
       void readProtobufV0002(const Pvl &header, const FileName netFile, Progress *progress=NULL);
       void readProtobufV0005(const Pvl &header, const FileName netFile, Progress *progress=NULL);
 
+      void readParquet(const FileName netFile, Progress *progress=NULL);
+      void writeParquet(const FileName netFile);
+
       ControlPoint *createPoint(ControlPointV0001 &point);
       ControlPoint *createPoint(ControlPointV0002 &point);
       ControlPoint *createPoint(ControlPointV0003 &point);
@@ -512,6 +515,7 @@ namespace Isis {
 
       void writeHeader(std::fstream *output);
       int writeFirstPoint(std::fstream *output);
+      void fillPointProto(ControlPoint *controlPoint, ControlPointFileEntryV0002 &protoPoint);
 
       ControlNetHeaderV0005 m_header; /**< Header containing information about
                                            the whole network.*/
