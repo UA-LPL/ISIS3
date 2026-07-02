@@ -171,11 +171,6 @@ namespace Isis {
                                           radii );
                                          
     }
-    else {
-      // Issue a warning and let the created shape model define the spheroid.
-      std::cout << "*** Warning - PsmrtsShapeModel: Target radii not defined for " 
-                << target->systemName()  << std::endl;
-    }
 
     // Check for tolerance amd apply if given found
     QString tolerance_s = kmap_t.get( "Tolerance", "" );
@@ -634,7 +629,7 @@ namespace Isis {
                                     "OnError",    "Tolerance" };
     for ( const auto &key : keys_p ) {
       if ( psmrts_data.exists( key ) ) {
-        kernels.addKeyword( psmrts_data.keyword( key), PvlContainer::Replace );
+        kernels.addKeyword( psmrts_data.keyword( key ), PvlContainer::Replace );
       }
     }
 
@@ -725,28 +720,34 @@ namespace Isis {
     // Load the shape model preferences
     PvlFlatMap preferences_t = get_shapemodel_preferences();
     bool pref_shapemodel_override = toBool( preferences_t.get("PsmrtsShapeModelOverride", "false" ) );
+    bool psmrts_debug = toBool( preferences_t.get("PsmrtsDebug", "false" ) );
 
     // First check the RayTraceEngine setting in the ISIS configuration file.
     // If it has anything other than RayTraceEngine = "psmrts", return a NULL
     // pointer and let ShapeModelFactory continue on.
     bool psmrts_requested = false;
-    PvlFlatMap config = extract_pvl_group( pvl, "Kernels" );
-    if ( !config.exists( "RayTraceEngine" ) || ( true == pref_shapemodel_override ) ) {
-      config = preferences_t;
+    PvlFlatMap kernels = extract_pvl_group( pvl, "Kernels" );
+    if ( !kernels.exists( "RayTraceEngine" ) || ( true == pref_shapemodel_override ) ) {
+      kernels = preferences_t;
     }
 
     // Check for PSMRTS engine and allow PSMRT override mode if requested!
     // Note this allows for changing of the ShapeModel using a preferences file.
     // This provides a runtime, per-program swap out of shape model and ray
     // tracing engine.
-    if ( config.exists( "RayTraceEngine" ) ) {
-      if ( config.get( "RayTraceEngine" ) != "psmrts" ) {
+    if ( kernels.exists( "RayTraceEngine" ) ) {
+      if ( kernels.get( "RayTraceEngine" ).toLower() != "psmrts" ) {
         if ( true == pref_shapemodel_override ) {
           PsmrtsShapeModel::psmrtsUpdateIsisLabel( pvl, preferences_t );
         }
-        return ( model_t );
+        return ( nullptr );
       }
       psmrts_requested = true;
+    }
+    else {
+      if ( requires_psmrts( pvl ) == false ) {
+        return  ( nullptr );
+      }
     }
 
     try {
@@ -754,7 +755,7 @@ namespace Isis {
       model_t = new PsmrtsShapeModel( target, pvl, preferences_t );
     }
     catch ( const std::runtime_error &re ) {
-      // std::cout << "Did not get a PSMRTS model!" << std::endl;
+      if ( psmrts_debug ) std::cout << "Did not get a PSMRTS model!" << std::endl;
       // Catch PSMRTS exceptions first
       if ( psmrts_requested || throw_errors ) {
         QString mess = "PsmrtsShapeModel::create() error occured: " + QString( re.what() );
@@ -763,7 +764,7 @@ namespace Isis {
       return ( nullptr );
     }
     catch ( const IException &ie ) {
-      // std::cout << "Did not get a PSMRTS model!" << std::endl;
+      if ( psmrts_debug ) std::cout << "Did not get a PSMRTS model!" << std::endl;
       // ISIS exceptions
       if ( psmrts_requested || throw_errors ) {
         QString mess = "ISIS/PSMRTS shape model error occured in PsmrtsShapeModel";
@@ -798,6 +799,54 @@ namespace Isis {
     }
 
     return ( model_t );
+  }
+
+
+  /**
+   * @brief Determine if the contents of the kernels group requires PSMRTS
+   * 
+   * This method will determine if the contents of ISIS labels require PSMRTS
+   * shape models. The conditions that require PSMRST is if the keyword
+   * RayTraceEngine = "psmrts". Also if there is more than one shape model file
+   * in the ShapeModel keyword or the single file contains a "lis" or "txt"
+   * extension. These conditions will return true which definitively requires
+   * PSMRTS shape models.
+   * 
+   * @param pvl    ISIS labels containing a Kernels group that has been created
+   *                  by spiceinit.
+   * @return true  If PSMRTS is required to create the ShapeModel tracer system
+   * @return false If PSMRTS is not required
+   */
+  bool PsmrtsShapeModel::requires_psmrts( const Pvl &pvl ) {
+    PvlFlatMap kernels = extract_pvl_group( pvl, "Kernels" );
+
+    // Check for PSMRTS ray trace engine
+    if ( kernels.get( "RayTraceEngine", "none" ).toLower() == "psmrts") {
+      return ( true );
+    }
+
+    // Check for PSMRTS file name requirements. If the ShapeModel keyword only
+    // contains one filename, check its format
+    if ( kernels.count( "ShapeModel") == 1 ) {
+      QString fname = kernels.get( "ShapeModel" );
+
+      // Does the filename contain "::" indicating unique PSMRT formatting
+      if ( fname.contains( "::" ) ) {
+        return ( true );
+      }
+
+      //Check for lists of shape models
+      QString fext = FileName( fname ).extension();
+      if ( ( "txt" ==  fext ) || ( "lis" == fext ) ) {
+        return ( true );
+      }
+
+      // Its just a regular shape model name format.
+      return ( false );
+    }
+
+    // There is more that one shape model which requires PSMRTS
+    return ( true );
   }
 
 

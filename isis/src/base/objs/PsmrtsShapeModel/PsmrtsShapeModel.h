@@ -153,6 +153,7 @@ namespace Isis {
 
       bool load_pvl_config( const QString &pvlconf_f, PvlFlatMap &flat_p ) const;
       bool load_shape_list( const QString &shapelist_f, PvlFlatMap &flat_p ) const;
+      static bool requires_psmrts( const Pvl &pvl );
 
 
       /** Return a reference to the configuration keywords */
