@@ -5,8 +5,7 @@
 
 # Specify the required version of CMake.  If your machine does not
 #  have this, it should be easy to build from https://cmake.org/download/
-cmake_minimum_required(VERSION 3.24)
-cmake_policy(SET CMP0135 NEW)
+cmake_minimum_required(VERSION 3.20)
 
 # Point cmake to our other CMake files.
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
@@ -309,7 +308,7 @@ find_package(inja              REQUIRED)
 
 # Install/configure PSMRTS system
 include(psmrts_system)
-find_package(psmrts REQUIRED)
+# find_package(psmrts REQUIRED)
 
 
 # Setup for googletest/googlemock before adding SensorUtilities so we build its tests
