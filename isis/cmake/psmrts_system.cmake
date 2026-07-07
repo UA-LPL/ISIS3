@@ -9,7 +9,6 @@ FetchContent_Declare(
   psmrts
   GIT_REPOSITORY https://github.com/UA-LPL/psmrts.git
   GIT_TAG        b85e10f56a0e3617be3f145cff93862706049491
-#  OVERRIDE_FIND_PACKAGE
 )
 
 # Configure the PSMRTS system

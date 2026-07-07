@@ -308,7 +308,6 @@ find_package(inja              REQUIRED)
 
 # Install/configure PSMRTS system
 include(psmrts_system)
-# find_package(psmrts REQUIRED)
 
 
 # Setup for googletest/googlemock before adding SensorUtilities so we build its tests
@@ -384,7 +383,7 @@ foreach (_variableName ${_variableNames})
 endforeach()
 
 # add target based linkages to ALLLIBS variable
-list(APPEND ALLLIBS pantor::inja sensorutilities protobuf::libprotobuf embree GDAL::GDAL Bullet::Bullet_double CSPICE::cspice psmrts)
+list(APPEND ALLLIBS pantor::inja sensorutilities protobuf::libprotobuf embree GDAL::GDAL Bullet::Bullet_double CSPICE::cspice psmrts::psmrts)
 
 list(APPEND ALLLIBS ${OpenCV_LIBS})
 list(APPEND ALLINCDIRS ${OpenCV_INCLUDE_DIRS})
