@@ -72,7 +72,6 @@ namespace Isis {
       HiVector _slope;
       HiVector _intercept;
       HiVector _tempProf;
-      HiVector _dc;
 
       double _refTemp;
 
@@ -92,7 +91,7 @@ namespace Isis {
         _intercept = loadCsv("DarkIntercept", conf, prof, 256);
 
         // Get temperation normalization factor
-        _refTemp = toDouble(ConfKey(prof, "FpaReferenceTemperature", toString(37.0)));
+        _refTemp = toDouble(ConfKey(prof, "FpaReferenceTemperature", toString(21.0)));
 
         //  Smooth/filter if requested
         int width =  toInt(ConfKey(prof,"ZeroDarkFilterWidth",toString(3)));
@@ -100,11 +99,11 @@ namespace Isis {
         LowPassFilter smooth(width, iters);
         _history.add("Smooth(Width["+ToString(width)+"],Iters["+ToString(iters)+"])");
 
-        //  Set average temperatures
+        //  Set average tempuratures
         double fpa_py_temp = ToDouble(prof("FpaPositiveYTemperature"));
         double fpa_my_temp = ToDouble(prof("FpaNegativeYTemperature"));
-        double _temp = (fpa_py_temp+fpa_my_temp) / 2.0;
-        _history.add("BaseTemperature[" + ToString(_temp) + "]");
+        double temp = (fpa_py_temp+fpa_my_temp) / 2.0;
+        _history.add("BaseTemperature[" + ToString(temp) + "]");
 
         //  Filter the slope/intercept
         smooth.Process(_slope);
@@ -115,26 +114,24 @@ namespace Isis {
 
         HiVector t_prof(_slope.dim());
         for (int i = 0 ; i < _slope.dim() ; i++) {
-          t_prof[i] = _intercept[i] + _slope[i] * _temp;
+          t_prof[i] = _intercept[i] + _slope[i] * temp;
         }
 
         _tempProf = rebin(t_prof, samples);
         _history.add("Rebin(T_Profile," + ToString(t_prof.dim()) + "," +
                      ToString(samples) +")");
 
-        _dc = HiVector(samples);
+        HiVector dc(samples);
         double linetime = ToDouble(prof("ScanExposureDuration"));
-        double scale = linetime * 1.0E-6 * _tdi;
+        double scale = linetime * 1.0E-6 * (_bin*_bin) *
+                       (20.0*103.0/89.0 + _tdi);
         double baseT = HiTempEqn(_refTemp);
-        _history.add("BaseT(HiTempEqn)[" + ToString(baseT) + "]");
-        _history.add("scale[" + ToString(scale) + "]");
-
         for (int j = 0 ; j < samples ; j++) {
-          _dc[j] = _BM[j] * scale * HiTempEqn(_temp) / baseT;
+          dc[j] = _BM[j] * scale * HiTempEqn(_tempProf[j]) / baseT;
         }
 
         //  Filter it yet again
-        smooth.Process(_dc);
+        smooth.Process(dc);
         _data = smooth.ref();
 
         //  Compute statistics and record to history
@@ -153,12 +150,12 @@ namespace Isis {
         o << "#  History = " << _history << std::endl;
         //  Write out the header
         o << std::setw(_fmtWidth)   << "DarkMatrix"
-          << std::setw(_fmtWidth+1) << "_dc"
+          << std::setw(_fmtWidth+1) << "TempNorm"
           << std::setw(_fmtWidth+1) << "ZeroDark\n";
 
         for (int i = 0 ; i < _data.dim() ; i++) {
           o << formatDbl(_BM[i]) << " "
-            << formatDbl(_dc[i]) << " "
+            << formatDbl(_tempProf[i]) << " "
             << formatDbl(_data[i]) << std::endl;
         }
         return;
