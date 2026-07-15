@@ -8,7 +8,7 @@ set(PSMRTS_BUILD_SHARED    ON)
 FetchContent_Declare(
   psmrts
   GIT_REPOSITORY https://github.com/UA-LPL/psmrts.git
-  GIT_TAG        b85e10f56a0e3617be3f145cff93862706049491
+  GIT_TAG        6b44a83926351638394688534eced41838f536c1
 )
 
 # Configure the PSMRTS system
