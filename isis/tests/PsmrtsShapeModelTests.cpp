@@ -30,7 +30,6 @@ TEST( PsmrtsShapeModelTests, DefaultConstructor ) {
   PsmrtsShapeModel default_psm;
   EXPECT_EQ(default_psm.name(), "PSMRTS");
   EXPECT_FALSE((bool) default_psm.get_shape_trace().hasHit());
-  EXPECT_FALSE((bool) default_psm.get_ellipsoid_trace().hasHit());
 
   // Get the PSMRTS tracer system and evaluate its default state
   const auto &tracer_s = default_psm.tracer_system();

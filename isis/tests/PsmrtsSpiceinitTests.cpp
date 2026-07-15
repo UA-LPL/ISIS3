@@ -32,10 +32,9 @@
 
 #include "gtest/gtest.h"
 
-
 using namespace Isis;
 
-class PsmrtsSpiceint : public TempTestingFiles {
+class PsmrtsSpiceinit : public TempTestingFiles {
   private:
     static inline QString APP_XML_OCAMS2ISIS = FileName("$ISISROOT/bin/xml/ocams2isis.xml").expanded();
     static inline QString APP_XML_SPICEINIT  = FileName("$ISISROOT/bin/xml/spiceinit.xml").expanded();
@@ -149,7 +148,7 @@ class EnhancedCameraPointInfo : public CameraPointInfo {
 };
 
 
-TEST_F(PsmrtsSpiceint, PsmrtsSpiceinitBullet ) {
+TEST_F(PsmrtsSpiceinit, PsmrtsSpiceinitBullet ) {
 
   const QString bennu_t( "bullet::$osirisrex/kernels/dsk/bennu_g_12600mm_alt_obj_0000n00000_v021a.bds" );
   const QString ocams_f( "data/osirisRexImages/ocams/20190328T200344S309_pol_iofL2pan.fits" );
@@ -194,7 +193,7 @@ TEST_F(PsmrtsSpiceint, PsmrtsSpiceinitBullet ) {
 }
 
 
-TEST_F(PsmrtsSpiceint, PsmrtsSpiceinitNaifDsk ) {
+TEST_F(PsmrtsSpiceinit, PsmrtsSpiceinitNaifDsk ) {
 
   const QString bennu_t( "naifdsk::$osirisrex/kernels/dsk/bennu_g_12600mm_alt_obj_0000n00000_v021a.bds" );
   const QString ocams_f( "data/osirisRexImages/ocams/20190328T200344S309_pol_iofL2pan.fits" );
@@ -238,7 +237,7 @@ TEST_F(PsmrtsSpiceint, PsmrtsSpiceinitNaifDsk ) {
   EXPECT_STREQ( ellipsoid_t.name().c_str(),  "ellipsoid" );  
 }
 
-TEST_F(PsmrtsSpiceint, PsmrtsSpiceinitEllipsoid ) {
+TEST_F(PsmrtsSpiceinit, PsmrtsSpiceinitEllipsoid ) {
 
   const QString bennu_t( "ellipsoid::0.283065,0.271215,0.249720" );
   const QString ocams_f( "data/osirisRexImages/ocams/20190328T200344S309_pol_iofL2pan.fits" );
@@ -282,7 +281,7 @@ TEST_F(PsmrtsSpiceint, PsmrtsSpiceinitEllipsoid ) {
   EXPECT_STREQ( ellipsoid_t.name().c_str(),  "ellipsoid" );  
 }
 
-TEST_F(PsmrtsSpiceint, PsmrtsSpiceinitSpheroid ) {
+TEST_F(PsmrtsSpiceinit, PsmrtsSpiceinitSpheroid ) {
 
   const QString bennu_t( "ellipsoid::0.283065,0.271215" );
   const QString ocams_f( "data/osirisRexImages/ocams/20190328T200344S309_pol_iofL2pan.fits" );
@@ -326,7 +325,7 @@ TEST_F(PsmrtsSpiceint, PsmrtsSpiceinitSpheroid ) {
   EXPECT_STREQ( ellipsoid_t.name().c_str(),  "ellipsoid" );  
 }
 
-TEST_F(PsmrtsSpiceint, PsmrtsSpiceinitIsisBullet ) {
+TEST_F(PsmrtsSpiceinit, PsmrtsSpiceinitIsisBullet ) {
 
   const QString bennu_t( "$osirisrex/kernels/dsk/bennu_g_12600mm_alt_obj_0000n00000_v021a.bds" );
   const QString ocams_f( "data/osirisRexImages/ocams/20190328T200344S309_pol_iofL2pan.fits" );
@@ -366,7 +365,7 @@ TEST_F(PsmrtsSpiceint, PsmrtsSpiceinitIsisBullet ) {
   // EXPECT_PRED_FORMAT2(AssertQStringsEqual,target_b->name(),  bennu_t );
 }
 
-TEST_F(PsmrtsSpiceint, PsmrtsSpiceinitIsisNaifDsk ) {
+TEST_F(PsmrtsSpiceinit, PsmrtsSpiceinitIsisNaifDsk ) {
 
   const QString bennu_t( "$osirisrex/kernels/dsk/bennu_g_12600mm_alt_obj_0000n00000_v021a.bds" );
   const QString ocams_f( "data/osirisRexImages/ocams/20190328T200344S309_pol_iofL2pan.fits" );
@@ -400,7 +399,7 @@ TEST_F(PsmrtsSpiceint, PsmrtsSpiceinitIsisNaifDsk ) {
 }
 
 
-TEST_F(PsmrtsSpiceint, PsmrtsSpiceinitPriorityTest ) {
+TEST_F(PsmrtsSpiceinit, PsmrtsSpiceinitPriorityTest ) {
 
   std::vector<QString> bennu_list = { 
     "# This loads a regional shape using NAIF, a global with Bullet and an ellipsoid",
@@ -481,7 +480,7 @@ TEST_F(PsmrtsSpiceint, PsmrtsSpiceinitPriorityTest ) {
 }
 
 
-TEST_F(PsmrtsSpiceint, PsmrtsSpiceinitComparison ) {
+TEST_F(PsmrtsSpiceinit, PsmrtsSpiceinitComparison ) {
 
   const QString bennu_p( "bullet::$osirisrex/kernels/dsk/bennu_g_12600mm_alt_obj_0000n00000_v021a.bds" );
   const QString bennu_i( "$osirisrex/kernels/dsk/bennu_g_12600mm_alt_obj_0000n00000_v021a.bds" );
@@ -560,18 +559,14 @@ TEST_F(PsmrtsSpiceint, PsmrtsSpiceinitComparison ) {
       std::unique_ptr<PvlGroup> points_i( enhanced_i.SetImage( samp, line ) );
 
       EXPECT_EQ( psmrts_t->plate_index(), bullet_t->plate_index() );
-      // const auto &ray_p = psmrts_t->get_shape_trace();
-      // const auto &ray_e = psmrts_t->get_ellipsoid_trace();
 
       PvlFlatMap flat_p( *points_p );
       PvlFlatMap flat_i( *points_i );
 
-      // EXPECT_NEAR( psmrts::radians_to_degrees( ray_p.trace().emission() ), toDouble( flat_p.get( "emission") ), tolerance );
-      // EXPECT_NEAR( psmrts::radians_to_degrees( ray_e.trace().emission() ), toDouble( flat_p.get( "emission") ), tolerance );
-
       EXPECT_EQ( flat_p.size(), flat_i.size() );
       for ( const auto &key : flat_p.keys() ) {
         SCOPED_TRACE("Error in key " + qt_to_string( key ) );
+        EXPECT_FALSE( flat_p.isNull( key ) );
         if ( !char_key.contains( key ) && flat_i.exists( key ) ) {
           for ( int i = 0 ; i < flat_p.count( key ) ; i++ ) {
             n_tested++;

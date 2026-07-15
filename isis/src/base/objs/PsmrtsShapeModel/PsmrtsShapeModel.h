@@ -38,6 +38,7 @@ namespace Isis {
     public:
     /** Set default surface point tolerance to millimeter precision */
       static inline const double DefaultDistanceTolerance = 1.0e-6;
+      static inline const double LastTraceTolerance = 1.0e-13;
 
       // Constructors
       PsmrtsShapeModel();
@@ -99,11 +100,6 @@ namespace Isis {
         return ( m_shape_ray_t );
       }
 
-      /** Return the ellipsoid ray trace request object */
-      inline const psmrts::PRQRayTrace &get_ellipsoid_trace() const {
-        return ( m_ellipsoid_ray_t );
-      }
-
       /** Return the occlusion tolerance (km) */
       inline double get_tolerance() const {
         return ( m_tolerance );
@@ -116,7 +112,8 @@ namespace Isis {
       }
 
       /**
-       * @brief Compute the surface intersept point given a lat/lon coordinate
+       * @brief Get the Surface Lat Lon Radius object with PRQ trace object
+       * 
        * 
        * This method computes the surface point on the shape DEM given a
        * latitude/longitude mapping coordinate. This is useful for
@@ -129,6 +126,50 @@ namespace Isis {
        * resulting trace of this configuration is returned as the surface
        * intercept point of this coordinate.
        * 
+       * Note this implementation exploits a common occurance in mapping ISIS
+       * operations where the radius computed for the surface point using the 
+       * LocalRadius( lat, lon ) method implemented in this class. Efforts are
+       * made to reuse that trace when calling interceptSurface( SurfacePoint,..).
+       * 
+       * @tparam T     Tracer, which could be a priority trace or a PsmrtsTraxcer
+       * @param lat    Latitude on the surface
+       * @param lon    Longitude on the surface 
+       * @param ray    A ray PRQ to return the trace results
+       * @return true  Indicates the trace was successful
+       * @return false The trace failed to intersect the surface
+       */
+      template <typename T>
+        bool getSurfaceLatLonRadius( const Latitude &lat, 
+                                     const Longitude &lon,
+                                     const T &tracer,
+                                     psmrts::PRQRayTrace &ray ) 
+                                     const {
+
+          // Compute the observer position ensuring it is above the shape                                          
+          double max_r = tracer.maximum_radius();
+          Eigen::Vector3d llr( lon.degrees(), lat.degrees(), max_r * 1.5 );
+          Eigen::Vector3d observer = psmrts::lonlatrad_to_xyz_d( llr );
+          Eigen::Vector3d lookdir = -observer;  // Just negate the observer
+
+          // Check to see if the last trace satisfies this observation. If not,
+          // run the requested trace to save it for subsequent traces.
+          bool status = m_latlon_ray_t.hasHit();
+          if ( !( observer.isApprox( m_latlon_ray_t.trace().observer(), LastTraceTolerance ) &&
+                  lookdir.isApprox( m_latlon_ray_t.trace().lookdir(),   LastTraceTolerance ) ) ) {
+
+            status = tracer.process( m_latlon_ray_t.set_trace( observer, lookdir ) );
+          }
+
+          // Copy the result to the return parameter
+          ray = std::move( m_latlon_ray_t );
+
+          // Return status of last trace activity
+          return ( status );
+        }
+
+      /**
+       * @brief Compute the surface intersept point given a lat/lon coordinate
+       * 
        * @param lat   Latitude of the mapping coordinate
        * @param lon   Longitude of the mapping coordinate
        * @return psmrts::PRQRayTrace Result of the shape model trace 
@@ -138,16 +179,10 @@ namespace Isis {
                                                     const Longitude &lon,
                                                     const T &tracer ) 
                                                     const {
-          // Compute the observer position ensuring it is above the shape                                          
-          double max_r = tracer.maximum_radius();
-          Eigen::Vector3d llr( lon.degrees(), lat.degrees(), max_r * 1.5 );
-          Eigen::Vector3d observer = psmrts::lonlatrad_to_xyz_d( llr );
-
-          Eigen::Vector3d lookdir = -observer;  // Just negate the observer
-          psmrts::PRQRayTrace ray_t( observer, lookdir );
 
           // Trace it to the surface for intersect potential
-          (void) tracer.process( ray_t );
+          psmrts::PRQRayTrace ray_t;
+          (void) getSurfaceLatLonRadius( lat, lon, tracer, ray_t );
           return ( ray_t );
         }
 
@@ -181,23 +216,28 @@ namespace Isis {
       // Disallow copying because ShapeModel is not copyable
       Q_DISABLE_COPY(PsmrtsShapeModel)
 
-      PvlFlatMap                 m_parameters;
-      psmrts::PRQRayTrace        m_shape_ray_t;
-      psmrts::PRQRayTrace        m_ellipsoid_ray_t;
-      psmrts::PsmrtsTracerSystem m_tracer_s;
-      double                     m_tolerance;
-      bool                       m_psmrts_debug;
+      PvlFlatMap                  m_parameters;
+      psmrts::PRQRayTrace         m_shape_ray_t;
+      mutable psmrts::PRQRayTrace m_latlon_ray_t;
+      psmrts::PsmrtsTracerSystem  m_tracer_s;
+      double                      m_tolerance;
+      bool                        m_psmrts_debug;
 
       static bool psmrtsUpdateIsisLabel( Pvl &pvl, const PvlFlatMap &psmrts_data ); 
  
       /** Reset/reinit all ray trace states to default conditions */
       inline void reset_all_rays( ) {
         m_shape_ray_t.reset();
-        m_ellipsoid_ray_t.reset();
       }
 
-      bool updateTraceState( const psmrts::PRQRayTrace &ray,
-                             const psmrts::PRQRayTrace &ray_e = psmrts::PRQRayTrace( ) );
+      inline bool emission_angle_isvalid( const Eigen::Vector3d &v1, 
+                                          const Eigen::Vector3d &v2 ) const {
+        double angle = psmrts::PsmrtsRayTrace::separation_angle( v1, v2 );
+        if ( angle > M_PI_2 ) return ( false );
+        return ( true );
+      }
+
+      bool updateTraceState( const psmrts::PRQRayTrace &ray );
   };
 }
 

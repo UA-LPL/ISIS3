@@ -7,6 +7,7 @@ find files of those names at the top level of this repository. **/
 #include "PsmrtsShapeModel.h"
 
 #include <numeric>
+#include <utility>
 
 #include <QtGlobal>
 #include <QVector>
@@ -33,7 +34,7 @@ namespace Isis {
                                      ShapeModel(),
                                      m_parameters(),
                                      m_shape_ray_t(),
-                                     m_ellipsoid_ray_t(),
+                                     m_latlon_ray_t(),
                                      m_tracer_s( "isis" ),
                                      m_tolerance( DefaultDistanceTolerance ),
                                      m_psmrts_debug( false ) {
@@ -74,7 +75,7 @@ namespace Isis {
                                       ShapeModel(target),
                                       m_parameters(),
                                       m_shape_ray_t(),
-                                      m_ellipsoid_ray_t(),
+                                      m_latlon_ray_t(),
                                       m_tracer_s( ),
                                       m_tolerance( DefaultDistanceTolerance ),
                                       m_psmrts_debug( false ) {
@@ -222,7 +223,7 @@ namespace Isis {
                                      ShapeModel(),
                                      m_parameters( parameters ),
                                      m_shape_ray_t(),
-                                     m_ellipsoid_ray_t(),
+                                     m_latlon_ray_t(),
                                      m_tracer_s( tracer_s ),
                                      m_tolerance( DefaultDistanceTolerance ),
                                      m_psmrts_debug( false ) {
@@ -257,15 +258,13 @@ namespace Isis {
   bool PsmrtsShapeModel::intersectSurface(std::vector<double> observerPos,
                                           std::vector<double> lookDirection) {
 
-    clearSurfacePoint();
     Eigen::Vector3d observer_t( observerPos.data() ); 
     Eigen::Vector3d lookdir_t( lookDirection.data() ); 
 
     m_shape_ray_t.set_trace( observer_t,lookdir_t );
     m_tracer_s.shape_trace( m_shape_ray_t );
-    m_ellipsoid_ray_t = m_tracer_s.ellipsoid_trace( observer_t, lookdir_t ); 
 
-    return ( this->updateTraceState( m_shape_ray_t, m_ellipsoid_ray_t ) );
+    return ( this->updateTraceState( m_shape_ray_t ) );
   }
 
 
@@ -289,34 +288,40 @@ namespace Isis {
                                           const std::vector<double> &observerPos,
                                           const bool &backCheck ) {
 
-    clearSurfacePoint();
+    bool status = getSurfaceLatLonRadius( lat, lon, 
+                                          m_tracer_s.get_shape_tracer(),
+                                          m_shape_ray_t );
 
-    m_shape_ray_t = getSurfaceLatLonRadius( lat, lon, m_tracer_s.get_shape_tracer() );
-    if ( true == m_shape_ray_t.hasHit() ) {
+    // If successful, set observer and calculate lookdir
+    if ( true == status ) {
+      // Save off the surfpt intercept point in case backCheck is needed
+      auto ray_t( std::move( m_shape_ray_t.trace() ) );
+      auto &datum_r = m_shape_ray_t.trace().datum();
+
+      Eigen::Vector3d observer_t( observerPos.data() );
+      Eigen::Vector3d lookdir_t = datum_r.m_xyz - observer_t;
+
+      datum_r.m_observer = observer_t;
+      datum_r.m_lookdir  = lookdir_t;
+
+      // Check for occlusions
       if ( true == backCheck ) {
-        auto ray_t            = m_shape_ray_t;
-        Eigen::Vector3d xyz_t = ray_t.trace().xyz();
-
-        Eigen::Vector3d observer_pos_t( observerPos.data() );
-        Eigen::Vector3d lookdir = xyz_t - observer_pos_t;
-
-        m_shape_ray_t = m_tracer_s.shape_trace( observer_pos_t, lookdir );
-        if ( true == m_shape_ray_t.hasHit() ) {
-          if ( !m_shape_ray_t.trace().isNear( ray_t.trace(), get_tolerance() ) ) {
-            m_shape_ray_t.set_trace( observer_pos_t, lookdir );
-            m_ellipsoid_ray_t.set_trace( observer_pos_t, lookdir );       
+        if ( emission_angle_isvalid( datum_r.m_normal, -datum_r.m_lookdir ) ) {
+          if ( true == m_tracer_s.shape_trace( m_shape_ray_t ) ) {
+            if ( !m_shape_ray_t.trace().isNear( ray_t, get_tolerance() ) ) {
+              m_shape_ray_t.set_trace( observer_t, lookdir_t );
+            }
           }
-          else {
-            // Now trace the ellipsoid
-            m_ellipsoid_ray_t = m_tracer_s.ellipsoid_trace( observer_pos_t, lookdir );
-          }
+        }
+        else {
+          // Its not visible from the observer
+          datum_r.m_hit = false;
         }
       }
     }
 
-
     // Update the shape trace state
-    return ( this->updateTraceState( m_shape_ray_t, m_ellipsoid_ray_t ) );
+    return ( this->updateTraceState( m_shape_ray_t ) );
   }
 
   /**
@@ -337,10 +342,41 @@ namespace Isis {
   bool PsmrtsShapeModel::intersectSurface(const SurfacePoint &surfpt,
                                           const std::vector<double> &observerPos,
                                           const bool &backCheck ) {
-    return ( intersectSurface( surfpt.GetLatitude(), 
-                               surfpt.GetLongitude(), 
-                               observerPos, 
-                               backCheck ) );
+
+    // Initialize/compute ground intercept
+    bool status = getSurfaceLatLonRadius( surfpt.GetLatitude(), 
+                                          surfpt.GetLongitude(), 
+                                          m_tracer_s.get_shape_tracer(),
+                                          m_shape_ray_t );
+
+    if ( true == status ) {
+      // Save off the surfpt intercept point in case backCheck is needed
+      auto ray_t( std::move( m_shape_ray_t.trace() ) );  
+      auto &datum_r = m_shape_ray_t.trace().datum();
+      
+      Eigen::Vector3d observer_t( observerPos.data() );
+      Eigen::Vector3d lookdir_t = datum_r.m_xyz - observer_t;
+
+      datum_r.m_observer = observer_t;
+      datum_r.m_lookdir  = lookdir_t;
+        
+      // Check for occlusion if requested
+      if ( true == backCheck ) {
+        if ( emission_angle_isvalid( datum_r.m_normal, -datum_r.m_lookdir ) ) {
+          if ( true == m_tracer_s.shape_trace( m_shape_ray_t ) ) {
+            if ( !m_shape_ray_t.trace().isNear( ray_t, get_tolerance() ) ) {
+              m_shape_ray_t.set_trace( observer_t, lookdir_t );
+            }
+          }
+        }
+        else {
+          // Its not visible from the observer
+          datum_r.m_hit = false;          
+        }
+      }
+    }
+
+    return ( this->updateTraceState( m_shape_ray_t ) );
   }                                            
 
 
@@ -356,14 +392,14 @@ namespace Isis {
    */
   void PsmrtsShapeModel::calculateDefaultlNormal() {
     // Check if none are set
-    if ( !hasNormal() && !m_ellipsoid_ray_t.hasHit() ) {
+    if ( !hasNormal() && !m_shape_ray_t.hasHit() ) {
       QString mess = "Intercept point does not exist - cannot provide normal vector";
       throw IException(IException::Programmer, mess, _FILEINFO_);
     }
     
     // Set the normal if not set
-    if ( m_ellipsoid_ray_t.hasHit() ) {
-      Eigen::Vector3d norm_t = m_ellipsoid_ray_t.trace().normal();
+    if ( m_shape_ray_t.hasHit() ) {
+      Eigen::Vector3d norm_t = m_shape_ray_t.trace().normal();
       setNormal(norm_t[0], norm_t[1], norm_t[2]); // this also takes care of setHasNormal(true);
     }
     
@@ -454,9 +490,11 @@ namespace Isis {
                                  Eigen::Vector3d( lookDirection.data() ) );
 
       // Trace it to the surface for the real radius
-      if ( m_tracer_s.process( ray_t ) ) {
-        if ( m_shape_ray_t.trace().isNear( ray_t.trace(), get_tolerance() ) ) {
-          return ( true );
+      if ( emission_angle_isvalid( m_shape_ray_t.trace().normal(), -ray_t.trace().lookdir() ) ) {
+        if ( m_tracer_s.process( ray_t ) ) {
+          if ( m_shape_ray_t.trace().isNear( ray_t.trace(), get_tolerance() ) ) {
+            return ( true );
+          }
         }
       }
     }                                   
@@ -477,26 +515,26 @@ namespace Isis {
   double PsmrtsShapeModel::emissionAngle(const std::vector<double> & sB) {
     
     // Check for intersect 
-    if ( !m_ellipsoid_ray_t.hasHit() ) {
+    if ( !m_shape_ray_t.hasHit() ) {
       return ( ShapeModel::emissionAngle( sB ) );
     }
 
     // Return the normal
-    return ( psmrts::radians_to_degrees( m_ellipsoid_ray_t.emission() ) );
+    return ( psmrts::radians_to_degrees( m_shape_ray_t.emission() ) );
   }
 
   // Calculate the incidence angle of the current intersection point
   double PsmrtsShapeModel::incidenceAngle(const std::vector<double> &uB) {
     
     // Check for intersect 
-    if ( !m_ellipsoid_ray_t.hasHit() ) {
+    if ( !m_shape_ray_t.hasHit() ) {
       return ( ShapeModel::emissionAngle( uB ) );
     }
 
     // Compute the vector from the surface to uB
     Eigen::Vector3d uB_v( uB.data() );
-    Eigen::Vector3d pub_v = m_ellipsoid_ray_t.trace().xyz() - uB_v;
-    double inc_r = psmrts::PsmrtsRayTrace::separation_angle( m_ellipsoid_ray_t.trace().normal(), pub_v );
+    Eigen::Vector3d pub_v = m_shape_ray_t.trace().xyz() - uB_v;
+    double inc_r = psmrts::PsmrtsRayTrace::separation_angle( m_shape_ray_t.trace().normal(), pub_v );
     return ( psmrts::radians_to_degrees( inc_r ) );
   }
 
@@ -520,10 +558,13 @@ namespace Isis {
   Distance PsmrtsShapeModel::localRadius(const Latitude &lat,
                                          const Longitude &lon) {
 
-    // Get surface intercept at the requested location                                          
-    auto ray_t = getSurfaceLatLonRadius( lat, lon, m_tracer_s.get_shape_tracer() );
+    // Get surface intercept at the requested location
+    psmrts::PRQRayTrace ray_t;                                         
+    bool status = getSurfaceLatLonRadius( lat, lon, 
+                                          m_tracer_s.get_shape_tracer(), 
+                                          ray_t );
     // Trace it to the surface for the real radius
-    if ( true == ray_t.hasHit() ) {
+    if ( true == status ) {
       return ( Distance( ray_t.trace().radius(), Distance::Kilometers ) );
     }
 
@@ -837,7 +878,8 @@ namespace Isis {
 
       //Check for lists of shape models
       QString fext = FileName( fname ).extension();
-      if ( ( "txt" ==  fext ) || ( "lis" == fext ) || ( "conf" == fext ) ) {
+      if ( ( "txt" ==  fext ) || ( "lis" == fext ) || 
+           ( "conf" == fext ) || ( "pvl" == fext ) ) {
         return ( true );
       }
 
@@ -868,36 +910,23 @@ namespace Isis {
    * @param ray   Shape model ray trace object to set 
    * @param ray_e Ellipsoid ray trace object to set 
    */
-  bool PsmrtsShapeModel::updateTraceState( const psmrts::PRQRayTrace &ray,
-                                            const psmrts::PRQRayTrace &ray_e ) {
+  bool PsmrtsShapeModel::updateTraceState( const psmrts::PRQRayTrace &ray_s ) {
 
-    SurfacePoint point;
     clearSurfacePoint();
 
-    if ( ray.hasHit() ) {
-      setHasIntersection( ray.hasHit() ); 
-      point.FromNaifArray( ray.trace().xyz().data() );
+    if ( ray_s.hasHit() ) {
+      setHasIntersection( ray_s.hasHit() ); 
+      SurfacePoint point;
+      point.FromNaifArray( ray_s.trace().xyz().data() );
       ShapeModel::setSurfacePoint( point );
 
       // Got the local normal so set it here
-      Eigen::Vector3d normal_l = ray.trace().normal();
+      Eigen::Vector3d normal_l = ray_s.trace().normal();
       setLocalNormal( normal_l[0], normal_l[1], normal_l[2] );
+      setNormal( normal_l[0], normal_l[1], normal_l[2] );      
     }
 
-    // Set the ellipsoid normal as well
-    if ( ray_e.hasHit() ) {
-      // If the shape model trace did not intersect, use the ellipsoid
-      if ( !point.Valid() ) {
-        setHasIntersection( ray_e.hasHit() ); 
-        point.FromNaifArray( ray_e.trace().xyz().data() );
-        ShapeModel::setSurfacePoint( point );
-      }
-
-      Eigen::Vector3d normal_e = ray_e.trace().normal();
-      setNormal( normal_e[0], normal_e[1], normal_e[2] );      
-    }
-    
-    return ( ray.hasHit() || ray_e.hasHit() );
+    return ( ray_s.hasHit() );
   }
 
 
