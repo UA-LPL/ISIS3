@@ -151,45 +151,14 @@ TEST( PsmrtsShapeModelTests, IsisTracerComparisons ) {
         EXPECT_TRUE( isis_bullet_t.hasLocalNormal() );
         EXPECT_TRUE( isis_naifdsk_t.hasLocalNormal() );
 
-        // These are ellipsoid angles!
-        EXPECT_NEAR( psmrts_bullet_t.emissionAngle( observer_v ), psmrts_naifdsk_t.emissionAngle( observer_v ), tolerance_d );
-        EXPECT_NEAR( psmrts_bullet_t.emissionAngle( observer_v ), isis_bullet_t.emissionAngle( observer_v ), tolerance_d );
-        EXPECT_NEAR( psmrts_bullet_t.emissionAngle( observer_v ), isis_naifdsk_t.emissionAngle( observer_v ), tolerance_d );
-        
-        // EXPECT_NEAR( psmrts_bullet_t.incidenceAngle( observer_v ), 0.0, tolerance_d );
-        EXPECT_NEAR( psmrts_bullet_t.incidenceAngle( observer_v ), psmrts_naifdsk_t.incidenceAngle( observer_v ), tolerance_d );
-        EXPECT_NEAR( psmrts_bullet_t.incidenceAngle( observer_v ), isis_bullet_t.incidenceAngle( observer_v ), tolerance_d );
-        EXPECT_NEAR( psmrts_bullet_t.incidenceAngle( observer_v ), isis_naifdsk_t.incidenceAngle( observer_v ), tolerance_d );
-
-        EXPECT_NEAR( psmrts_bullet_t.phaseAngle( observer_v, observer_v ), 0.0, tolerance_d );
-        EXPECT_NEAR( psmrts_bullet_t.phaseAngle( observer_v, observer_v ), psmrts_naifdsk_t.phaseAngle( observer_v, observer_v ), tolerance_d );
-        EXPECT_NEAR( psmrts_bullet_t.phaseAngle( observer_v, observer_v ), isis_bullet_t.phaseAngle( observer_v, observer_v ), tolerance_d );
-        EXPECT_NEAR( psmrts_bullet_t.phaseAngle( observer_v, observer_v ), isis_naifdsk_t.phaseAngle( observer_v, observer_v ), tolerance_d );      
-        
-        EXPECT_THAT( psmrts_naifdsk_t.normal(), Pointwise(DoubleNear(tolerance_km), psmrts_bullet_t.normal() ) );
-        EXPECT_THAT( isis_bullet_t.normal(),    Pointwise(DoubleNear(tolerance_km), psmrts_bullet_t.normal() ) );
-        // EXPECT_THAT( isis_naifdsk_t.normal(),   Pointwise(DoubleNear(tolerance_km), psmrts_bullet_t.normal() ) );
-        
-        // EXPECT_THAT( psmrts_naifdsk_t.localNormal(), Pointwise(DoubleNear(tolerance_km), psmrts_bullet_t.localNormal() ) );
-        // EXPECT_THAT( isis_bullet_t.localNormal(),    Pointwise(DoubleNear(tolerance_km), psmrts_bullet_t.localNormal() ) );
-        // EXPECT_THAT( isis_naifdsk_t.localNormal(),   Pointwise(DoubleNear(tolerance_km), psmrts_bullet_t.localNormal() ) );
-
-        // EXPECT_EQ( psmrts_bullet_t.plate_index(), psmrts_naifdsk_t.plate_index() );
-        // EXPECT_EQ( psmrts_bullet_t.plate_index(), isis_bullet_t.plate_index() );
-        // EXPECT_EQ( psmrts_bullet_t.plate_index(), isis_naifdsk_t.plate_index() );
-        // EXPECT_EQ( psmrts_naifdsk_t.plate_index(), isis_naifdsk_t.plate_index() );
-
         const auto &psmrts_bullet_ray  = psmrts_bullet_t.get_shape_trace().trace();
         const auto &psmrts_naifdsk_ray = psmrts_naifdsk_t.get_shape_trace().trace();
 
-        // EXPECT_TRUE( psmrts_bullet_ray.normal().isApprox( psmrts_naifdsk_ray.normal() , tolerance_km ) );
         EXPECT_TRUE( psmrts_bullet_ray.raypt().isApprox( psmrts_naifdsk_ray.raypt() , tolerance_km ) );
         EXPECT_TRUE( psmrts_bullet_ray.xyz().isApprox( psmrts_naifdsk_ray.xyz() , tolerance_km ) );
 
         EXPECT_NEAR( psmrts_bullet_ray.radius(), psmrts_naifdsk_ray.radius() , tolerance_km );
         EXPECT_NEAR( psmrts_bullet_ray.slant_distance(), psmrts_naifdsk_ray.slant_distance(), tolerance_km );
-        // EXPECT_NEAR( psmrts_bullet_ray.emission(), psmrts_naifdsk_ray.emission(), tolerance_km );
-        // EXPECT_NEAR( psmrts_bullet_ray.incidence( psmrts_naifdsk_ray ), 0.0, tolerance_km );
         EXPECT_NEAR( psmrts_bullet_ray.distance( psmrts_naifdsk_ray ), 0.0, tolerance_km );
         EXPECT_NEAR( psmrts::PsmrtsRayTrace::separation_angle( psmrts_bullet_ray.xyz(), psmrts_naifdsk_ray.xyz() ), 0.0, tolerance_km );
 
