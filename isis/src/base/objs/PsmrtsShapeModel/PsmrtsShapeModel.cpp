@@ -879,7 +879,7 @@ namespace Isis {
       //Check for lists of shape models
       QString fext = FileName( fname ).extension();
       if ( ( "txt" ==  fext ) || ( "lis" == fext ) || 
-           ( "conf" == fext ) || ( "pvl" == fext ) ) {
+           ( "conf" == fext ) ) {
         return ( true );
       }
 
