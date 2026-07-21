@@ -215,7 +215,7 @@ namespace Isis {
    *
    * @author 2014-02-12 Kris Becker
    *
-   * @param model DSK plate model from an existing NaidDskPlateModel (see the
+   * @param model DSK plate model from an existing NaifDskPlateModel (see the
    *              model() method
    */
   PsmrtsShapeModel::PsmrtsShapeModel(const psmrts::PsmrtsTracerSystem &tracer_s,
@@ -235,7 +235,24 @@ namespace Isis {
 
 
   /** Destructor - cleanup is handled automagically */
-  PsmrtsShapeModel::~PsmrtsShapeModel() = default;
+  PsmrtsShapeModel::~PsmrtsShapeModel() {
+    if ( this->isDebug() ) {
+      std::cout << "\nPsmrtsShapeModel() shutting down!" << std::endl;
+      std::cout << "RunTime (s):    " << m_shape_ray_t.tracker().runtime_s() << std::endl;
+      std::cout << "ShapeRayCount:  " << m_shape_ray_t.tracker().count() << std::endl;
+      std::cout << "LatLotRayCount: " << m_latlon_ray_t.tracker().count() << std::endl;
+      for ( const auto &tracer : this->tracer_system().get_shape_tracer().tracers() ) {
+        auto uid = tracer.uid();
+        std::cout << "\nTracerUid:   " << uid << std::endl;
+        std::cout << "Name:        " << tracer.name() << std::endl;
+        std::cout << "Type:        " << tracer.type() << std::endl;
+        std::cout << "Model:       " << tracer.model() << std::endl;
+        auto tracker_t = tracer.product().timestamp();
+        std::cout << "TraceCount:  " << tracker_t.count() << std::endl;
+        std::cout << "RunTime (s): " << tracker_t.runtime_s() << std::endl;
+      }      
+    }
+  }
 
 
   /**

@@ -38,7 +38,7 @@ namespace Isis {
     public:
     /** Set default surface point tolerance to millimeter precision */
       static inline const double DefaultDistanceTolerance = 1.0e-6;
-      static inline const double LastTraceTolerance = 1.0e-13;
+      static inline const double LastTraceTolerance = 1.0e-9;
 
       // Constructors
       PsmrtsShapeModel();
@@ -153,6 +153,7 @@ namespace Isis {
 
           // Check to see if the last trace satisfies this observation. If not,
           // run the requested trace to save it for subsequent traces.
+          ray.reset();
           bool status = m_latlon_ray_t.hasHit();
           if ( !( observer.isApprox( m_latlon_ray_t.trace().observer(), LastTraceTolerance ) &&
                   lookdir.isApprox( m_latlon_ray_t.trace().lookdir(),   LastTraceTolerance ) ) ) {
@@ -160,8 +161,9 @@ namespace Isis {
             status = tracer.process( m_latlon_ray_t.set_trace( observer, lookdir ) );
           }
 
-          // Copy the result to the return parameter
-          ray = std::move( m_latlon_ray_t );
+          // Carefully copy the result to the return parameter
+          ray.trace() = std::move( m_latlon_ray_t.trace() );
+          if ( m_latlon_ray_t.error_count() > 0 ) ray.add_error( m_latlon_ray_t.errors_to_string() );
 
           // Return status of last trace activity
           return ( status );
