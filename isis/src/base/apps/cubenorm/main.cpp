@@ -190,10 +190,10 @@ void getStats(Buffer &in) {
   sort(pixels.begin(), pixels.end());
 
   // Now obtain the median value and store in the median vector
-  int size = pixels.size();
-  if(size != 0) {
-    int med = size / 2;
-    if(size % 2 == 0) {
+  int size_p = pixels.size();
+  if(size_p != 0) {
+    int med = size_p / 2;
+    if(size_p % 2 == 0) {
       median.push_back((pixels[med-1] + pixels[med]) / 2.0);
     }
     else {
