@@ -48,6 +48,9 @@ namespace Isis {
    * @ingroup Utility
    *
    * @author 2010-04-06 Kris Becker
+   * @history 2026-07-25 Kris J. Becker Added default path name to constructor 
+   *            of file rather than have it determined using hical calibration 
+   *            and model parameter data
    */
   class LoadCSV {
 
@@ -55,13 +58,13 @@ namespace Isis {
       //  Constructors and Destructor
       LoadCSV();
       LoadCSV(const QString &base, const HiCalConf &conf,
-              const DbProfile &profile);
+              const DbProfile &profile, const QString &default_csv = "");
 
       /** Destructor */
       virtual ~LoadCSV() { }
 
       void load(const QString &base, const HiCalConf &conf,
-               const DbProfile &profile);
+               const DbProfile &profile, const QString &default_csv = "");
 
       QString filename() const;
       int size() const;

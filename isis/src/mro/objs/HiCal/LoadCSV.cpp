@@ -24,13 +24,13 @@ namespace Isis {
   LoadCSV::LoadCSV() : _base(), _csvSpecs("LoadCSV"), _data(0,0), _history() { }
 
   LoadCSV::LoadCSV(const QString &base, const HiCalConf &conf,
-                   const DbProfile &profile) : _base(), _csvSpecs("LoadCSV"),
-                   _data(0,0), _history() {
-    load(base, conf, profile);
+                   const DbProfile &profile, const QString &default_csv) : 
+                  _base(), _csvSpecs("LoadCSV"), _data(0,0), _history() {
+    load( base, conf, profile, default_csv );
   }
 
   void LoadCSV::load(const QString &base, const HiCalConf &conf,
-                     const DbProfile &profile) {
+                     const DbProfile &profile, const QString &default_csv) {
 
     //  Initialize the object with necessary info
     init(base, conf, profile);
@@ -38,7 +38,14 @@ namespace Isis {
     // Set up access to the CSV table.  Note that HiCalConf.getMatrixSource()
     // method is typically used, but the parsing has been broken up here for
     // implementation purposes.
-    QString csvfile(conf.filepath(getValue()));
+    QString csvfile;
+    if ( default_csv.isEmpty() ) {
+      csvfile = conf.filepath(getValue());
+    }
+    else {
+      csvfile = default_csv;
+      _csvSpecs.replace( base, csvfile );
+    }
     addHistory("File", csvfile);
     CSVReader csv;
 
