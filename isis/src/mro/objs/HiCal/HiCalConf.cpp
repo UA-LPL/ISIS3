@@ -566,6 +566,7 @@ DbProfile HiCalConf::makeParameters(Pvl &label) const {
   parms.add("BIN", inst["Summing"]);
   parms.add("FILTER", CcdToFilter(ccd));
   parms.add("CCDCHANNELINDEX", ToString(getChannelIndex(ccd, channel)));
+  parms.add( "ADC", get_adc_setting( inst ) );
   return (parms);
 }
 
@@ -579,6 +580,7 @@ DbProfile HiCalConf::makeParameters(const DbProfile &profile) const {
   parms.add("BIN", profile("Summing"));
   parms.add("FILTER", CcdToFilter(ccd));
   parms.add("CCDCHANNELINDEX", ToString(getChannelIndex(ccd, channel)));
+  parms.add( "ADC", get_adc_setting( profile ) );
   return (parms);
 }
 
@@ -611,5 +613,27 @@ QString HiCalConf::parser(const QString &s, const ValueList &vlist,
 
     return (sout);
 }
+
+QString HiCalConf::get_adc_setting( const PvlGroup &inst ) const {
+  QString adc;
+  if ( inst.hasKeyword( "ADCTimingSetting") ) {
+    const PvlKeyword &key = inst["ADCTimingSetting"];
+    for ( int i = 0 ; i < key.size() ; i++ ) {
+      adc += key[i];
+    } 
+  }
+  return ( adc );
+}
+
+QString HiCalConf::get_adc_setting( const DbProfile &profile ) const {
+  QString adc;
+  if ( profile.exists( "ADCTimingSetting" ) ) {
+    for ( int i = 0 ; i < profile.count( "ADCTimingSetting" ) ; i++ ) {
+      adc += profile.value( "ADCTimingSetting", i) ;
+    } 
+  }
+  return ( adc );
+}
+
 
 }  // namespace Isis

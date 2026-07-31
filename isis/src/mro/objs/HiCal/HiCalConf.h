@@ -79,6 +79,8 @@ namespace Isis {
    *          were signaled. References #2248.
    * @history 2019-05-16 Jesse Mapel - Added Mars satellite kernel because the
    *          base planet orbit kernel only has Mars Bayrcenter now.
+   * @history 2026-07-25 Kris J. Becker Moved makePattern() and parer() to public
+   *                       scope for more flexibility (ZeroDark)
    */
   class HiCalConf : public DbAccess {
     public:
@@ -120,6 +122,10 @@ namespace Isis {
       QString resolve(const QString &composite,
                           const DbProfile &matconf) const;
 
+      QString makePattern(const QString &str) const;
+      QString parser(const QString &s, const ValueList &options,
+                     const DbProfile &prof ) const;
+
     private:
       static bool  _naifLoaded;  //!< Ensures one instance of NAIF kernels
       QString  _profName;    //!< Specified name of profile
@@ -135,9 +141,9 @@ namespace Isis {
       int getChannelIndex(const int &ccd, const int &channel) const;
       DbProfile makeParameters(Pvl &label) const;
       DbProfile makeParameters(const DbProfile &profile) const;
-      QString makePattern(const QString &str) const;
-      QString parser(const QString &s, const ValueList &options,
-                     const DbProfile &prof ) const;
+
+      QString get_adc_setting( const PvlGroup &inst ) const;
+      QString get_adc_setting( const DbProfile &profile ) const;
     };
 
 }     // namespace Isis
