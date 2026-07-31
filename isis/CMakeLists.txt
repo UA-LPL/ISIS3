@@ -174,6 +174,15 @@ set(thirdPartyCppFlags -Wall
                        -DENABLEJP2K=${JP2KFLAG}
                      )
 
+# Fix compilation errors on exit functions (no idea why this is an issue) (2026-07-26)
+if(APPLE)
+  set(thirdPartyCppFlags ${thirdPartyCppFlags} 
+                         -Dat_quick_exit=atexit
+                         -Dquick_exit=exit )
+
+endif()
+
+
 set(CMAKE_CXX_STANDARD 14)
 
 # Append CPP flags set in the third party lib file to the string set in this file.
