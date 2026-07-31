@@ -51,8 +51,8 @@ namespace Isis {
 
   void hical(UserInterface &ui, Pvl *log) {
     const QString hical_program = "hical";
-    const QString hical_version = "5.0";
-    const QString hical_revision = "$Revision: 6715 $";
+    const QString hical_version = "6.0";
+    const QString hical_revision = "2026-07-31";
     const QString hical_runtime = Application::DateTime();
 
     QString procStep("prepping phase");
@@ -536,6 +536,9 @@ namespace Isis {
         rcal += GffHist.makekey("GainFlatField");
         rcal += GtHist.makekey("GainTemperature");
         rcal += GucHist.makekey("GainUnitConversion");
+      }
+      else {
+        rcal += ZdHist.makekey("ZeroDark");
       }
 
       p.EndProcess();
