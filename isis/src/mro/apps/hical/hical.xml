@@ -242,7 +242,7 @@ Object = Hical
 /* case matter!  WARNING:  You can easily break file lookups if these keys */
 /* are deleted or modified improperly!!! */
   OptionKeywords = ("FILTER", "CCD", "CHANNEL", "TDI", "BIN", "ProductId",
-                    "Program", "Module", "OPATH", "CalOptions")
+                    "Program", "Module", "OPATH", "CalOptions", "ADC")
 
 /* Additional profile combinations and order load hierarchy.  These keywords */
 /* are defined when the LabelGroups are loaded. */
@@ -355,6 +355,16 @@ Object = Hical
 
     DarkIntercept = "$mro/calibration/matrices/beta/B_Temperature_Intercept_hical_????.csv"
     DarkInterceptColumnName = "CH{CHANNEL}_TDI{TDI}"
+
+/* Define the ADC B matrix dark current variables (added 2026-07-26). TO add a */
+/* unique B matrix for new ADC setting just drop it in $mro/calibration/matrices. */
+/* If an ADC setting requires a unique FPA temperature threshold, add a variable */
+/* below that has the form ADCXY_FpaTemperatureThreshold where "XY" is the new */
+/* ADC setting that needs the unique temperature threshold. */
+    ADC_FpaTemperatureThreshold = 31.0
+    ADC_FpaReferenceTemperature = 37.0
+    ADC_DarkCurrent = "$mro/calibration/matrices/ADC{ADC}_B_TDI{TDI}_BIN{BIN}_hical_????.csv"
+    ADC_DarkCurrentColumnName = "{CCD}/{CHANNEL}"
 
     /* Do filtering? */
     ZeroDarkFilterWidth      = 3
@@ -988,6 +998,7 @@ End_Object
             <br><h1 align="center">ZeroDark Module Parameters</h1> </br>
             <TABLE BORDER="1">
                   <CAPTION>
+                    <p>
                       The dark current subtraction consists of a correction
                       based on the "B-matrices" and a temperature correction to
                       these B-matrices, based on a reference FPA temperature and
@@ -1008,6 +1019,12 @@ End_Object
                       <b>hical</b> does a rebin to expand or contract the
                       bin4 linear coefficients to bin8, bin2, or bin1, depending
                       on the bin mode of the image being calibrated.
+                    </p>
+                    <p>
+                      The ADC hot algorithm (added 2026-07-31) has specific 
+                      keywords that apply to the configuration. These keywords
+                      begin with "ADC".
+                    </p>
                   </CAPTION>
                 <TR>
                   <TH>Parameter</TH>
@@ -1048,12 +1065,71 @@ End_Object
                 <TR>
                     <TD>ZeroDarkFilterIterations</TD>
                     <TD>
-                       Specifies the number of sequential filters of width
+                        Specifies the number of sequential filters of width
                         ZeroDarkFilterWidth to apply to the resulting
                         temperature profile after expanding or contracting of
                         the data. [Default: 1]
                     </TD>
                 </TR>
+                <TR>
+                    <TD>ADC_FpaTemperatureThreshold</TD>
+                    <TD>
+                        ADC_FpaTemperatureThreshold indicates the default minimum
+                        average FPA temperature that will invoke the current
+                        hot temperature algorithm. Average FPA temperatures 
+                        greater than the value in ADC_FpaTemperatureThreshold 
+                        will trigger use the new ADC B matrices and hot algorithm. 
+                        [Default: 31 Celsius]
+                    </TD>
+                </TR>
+                <TR> 
+                    <TD>ADCxy_FpaTemperatureThreshold</TD>
+                    <TD>
+                        [Optional] ADC FPA temperature thresholds for some ADC 
+                        modes may require different temperatures to trigger the 
+                        execution of the ADC hot algorithm. Keywords of the form
+                        ADCxy_FpaTemperatureThreshold, where "xy" is the
+                        first and second values of the ADCTimingSetting label
+                        keyword can be added to the ZeroDark module configuration
+                        to specify a specific trigger temperature for that ADC 
+                        mode. If the ADC specific keyword does not exist,
+                        ZeroDark will use the value of the 
+                        ADC_FpaTemperatureThreshold instead.
+                    </TD>
+                </TR>
+                <TR> 
+                    <TD>ADC_FpaReferenceTemperature</TD>
+                    <TD>
+                        This keyword in CONFIG specifes the reference temperature
+                        used in dark current equation rather than
+                        FpaReferenceTemperature used in the cold algorithm. 
+                        [Default: 37 Celcius]
+                    </TD>
+                </TR> 
+                <TR> 
+                    <TD>ADC_DarkCurrent</TD>
+                    <TD>
+                        Secifies the path and name of the new ADC B matrices.
+                        The file pattern for this file is 
+                        $mro/calibration/matrices/ADC{ADC}_B_TDI{TDI}_BIN{BIN}_hical.????.csv.
+                        The string ADC{ADC} is translated using the ADC numbers
+                        extracted from the ADCTimingSetting keyword in the label. 
+                        The default, ADC54, is used for all ADC settings if
+                        specific ADC B matrices files are not present in the
+                        ISISDATA calibration directory.
+                    </TD>
+                </TR>
+                <TR> 
+                    <TD>ADC_DarkCurrentColumnName</TD>
+                    <TD>
+                        This keyword is required to determine the column in the
+                        ADC B matrix files to extract for ADC dark current
+                        calibration. The value of this keyword is the same as the
+                        DarkCurrentColumnName keyword used in the cold B matrices.
+                        Note this implies that both sets of B matrices are stored
+                        in the same format.
+                    </TD>
+                </TR>                                                                                  
             </TABLE>
 
             <br><h1 align="center">ZeroDarkRate Module Parameters</h1> </br>
@@ -1341,11 +1417,42 @@ End_Object
                 </TR>
             </TABLE>
     <p>
-    If run on a non-spiceinited cube, this program requires access to local mission-specific
-    SPICE kernels, in order to find the distance between the sun and the target body.
-    When run on a spiceinited cube, this can be determined using the camera model.
-    Using a spiceinited cube as input has the advantage of not requiring that local
-    mission-specific kernels be available. (See spiceinit web=true.)
+        If run on a non-spiceinited cube, this program requires access to local mission-specific
+        SPICE kernels, in order to find the distance between the sun and the target body.
+        When run on a spiceinited cube, this can be determined using the camera model.
+        Using a spiceinited cube as input has the advantage of not requiring that local
+        mission-specific kernels be available. (See spiceinit web=true.)
+    </p>
+    <h2>ADC Timing Settings and New B Matrices in ZeroDark Module</h2>
+    <p>
+        Recent modifications (2026-07-31) have been made to the ISIS <b>hical</b>
+        application that adds support for new B matrices used in the <b>ZeroDark</b>
+        module. These new matrices are designed for images acquired under camera
+        warming conditions.  The matrices were created for particular analog-to-digital
+        conversion (ADC) settings for the image during acquisition. The first set
+        of ADC B matrices are provided for images acquired when the ADC mode is
+        set to 5,4,  or ADC54. The ADC settings applied during image acquisition
+        can be found in the ISIS label keyword called <b>ADCTimingSetting</b>
+        contained in the Instrument group of the cube labels. The keyword has
+        the form <b>ADCTimingSetting = (5, 4)</b> where <b>5</b> (reference) is
+        the first value and <b>4</b> (sample) is the second value. In <b>hical</b>,
+        the array values in the keyword array are concatenated together to form
+        a new keyword, <em>ADC</em> with the value "54" in this case. The <b>hical</b>
+        <b>ZeroDark</b> module uses <b>ADC</b> to create compound strings, such
+        as <b>ADC54</b>, to construct keywords and filenames to that are
+        translated (i,., substituted) at runtime for <b>ZeroDark</b> processing.
+    </p>
+    <p>
+        New B matrices have been created for <em>ADC54</em> for a variety of TDI
+        and BIN settings. The contents follow the same format of the current B
+        matrices but are scaled differently so a new algorithm must be developed 
+        pply these data. This scale change requires a different dark current
+        equation and does no use the slope and intercept vectors read from two
+        CHANNEL related files in the <em>$ISISDATA/mro/calibration/matrices</em>
+        directory. The <b>ZeroDark</b> module has been modified to separately apply
+        the original (cold) algorithm a new ADC (hot) algorithm. The hot
+        algorithm has new keywords that have been added to the <b>hical</b> CONFIG
+        file in the <b>ZeroDark</b> module configuration.
     </p>
   </description>
 
@@ -1460,6 +1567,18 @@ End_Object
        $ISISDATA/mro/calibration/hical.0023_darkrate.conf to enable the new
        ZeroDarkRate module instead of the old ZeroDark module.
    </change>
+   <change name="Kris J. Becker" date="2026-07-31">
+       Add support for ADC warm camera images that require new B matrices in
+       the ZeroDark module. The ZeroDark calibration log is now always written
+       to the output ISIS labels so users can check processing in that module.
+       There was also a bug fix where the ZeroDark parameter ZeroDarkFilterIterations
+       was misspelled (the "o" was missing in Zero) which resulting in no smoothing
+       being applied on the ZeroDark data - ever. This has been corrected and in
+       the next version of the hical CONFIG file, this keyword has been set to 
+       0 to be backward compatible. Due to the processing complexity of the 
+       ZeroDark module the log of its activity is always written to the ZeroDark
+       keyword in the RadiometricCalibration group of the output label.
+   </change>   
   </history>
 
   <category>
