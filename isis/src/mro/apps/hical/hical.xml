@@ -1454,6 +1454,27 @@ End_Object
         algorithm has new keywords that have been added to the <b>hical</b> CONFIG
         file in the <b>ZeroDark</b> module configuration.
     </p>
+    <br/>
+    <h2>References</h2>
+    <br/>
+    <cite>
+      1. Becker, Kris J., et al. "hical—The HiRISE radiometric calibration 
+      software developed within the ISIS3 planetary image processing suite." 
+      USGS Report (2022): 26. <a
+      href="https://pubs.usgs.gov/tm/07/c27/tm7c27.pdf">
+      https://doi.org/10.3133/tm7C275</a>
+    </cite>
+    <br/>
+    <br/>
+    <cite>
+      2. McEwen, Alfred S., et al. "The high-resolution imaging science 
+      experiment (HiRISE) in the MRO extended science phases (2009–2023)."
+      Icarus 419 (2024): 115795.
+      <a href="https://www.sciencedirect.com/science/article/pii/S0019103523003731">
+      https://doi.org/10.1016/j.icarus.2023.115795</a>.
+    </cite>
+    <br/>
+    <br/>    
   </description>
 
   <history>
