@@ -57,7 +57,7 @@ dependencies:
   - qt>=5.9.6,<5.15.0
   - qwt
   - sqlite
-  - suitesparse
+  - suitesparse <7.7.0
   - superlu
   - swig
   - texlive-core
