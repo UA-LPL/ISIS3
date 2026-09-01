@@ -18,7 +18,7 @@ find files of those names at the top level of this repository. **/
 #include "PvlFlatMap.h"
 #include "SurfacePoint.h"
 
-#include <psmrts/tracers/PsmrtsTracerSystem.hpp>
+#include <psmrts/tracers/PsmrtsPriorityTracer.hpp>
 #include "IsisPsmrtsUtilities.hpp"
 
 
@@ -45,6 +45,8 @@ namespace Isis {
       PsmrtsShapeModel(Target *target, Pvl &pvl, 
                        const PvlFlatMap &parameters = PvlFlatMap() );
       PsmrtsShapeModel(const psmrts::PsmrtsTracerSystem &tracer_s, 
+                       const PvlFlatMap &parameters = PvlFlatMap() );                       
+      PsmrtsShapeModel(const psmrts::PsmrtsPriorityTracer &tracer_t, 
                        const PvlFlatMap &parameters = PvlFlatMap() );
 
       // Destructor
@@ -91,8 +93,8 @@ namespace Isis {
       int plate_index() const;
 
       /** Return the composite tracer system reference */
-      inline const psmrts::PsmrtsTracerSystem &tracer_system() const {
-        return ( m_tracer_s );
+      inline const psmrts::PsmrtsPriorityTracer &tracer() const {
+        return ( m_tracer );
       }
 
       /** Return the shape model ray trace request object */
@@ -208,22 +210,16 @@ namespace Isis {
         m_psmrts_debug = p_debug;
       }
 
-      /** Clear any tracer errors that may have occured */
-      inline void clear_errors( ) {
-        return ( m_tracer_s.clear_errors() );
-      }
-      
-
     private:
       // Disallow copying because ShapeModel is not copyable
       Q_DISABLE_COPY(PsmrtsShapeModel)
 
-      PvlFlatMap                  m_parameters;
-      psmrts::PRQRayTrace         m_shape_ray_t;
-      mutable psmrts::PRQRayTrace m_latlon_ray_t;
-      psmrts::PsmrtsTracerSystem  m_tracer_s;
-      double                      m_tolerance;
-      bool                        m_psmrts_debug;
+      PvlFlatMap                   m_parameters;
+      psmrts::PRQRayTrace          m_shape_ray_t;
+      mutable psmrts::PRQRayTrace  m_latlon_ray_t;
+      psmrts::PsmrtsPriorityTracer m_tracer;
+      double                       m_tolerance;
+      bool                         m_psmrts_debug;
 
       static bool psmrtsUpdateIsisLabel( Pvl &pvl, const PvlFlatMap &psmrts_data ); 
  

@@ -176,20 +176,13 @@ TEST_F(PsmrtsSpiceinit, PsmrtsSpiceinitBullet ) {
   PsmrtsShapeModel *psmrts_t = dynamic_cast<PsmrtsShapeModel *>( camera_t->target()->shape() );
   ASSERT_NE( psmrts_t, nullptr );
 
-  const psmrts::PsmrtsTracerSystem &tracer_s = psmrts_t->tracer_system();
-  EXPECT_EQ( tracer_s.size(), 1 );
-
-  const psmrts::PsmrtsPriorityTracer &priority_t = tracer_s.get_shape_tracer();
+  const psmrts::PsmrtsPriorityTracer &priority_t = psmrts_t->tracer();
   ASSERT_EQ( priority_t.size(), 1 );
   
   EXPECT_STREQ( priority_t.tracers()[0].type().c_str(),  "tracer" );
   EXPECT_STREQ( priority_t.tracers()[0].model().c_str(), "bullet" );
   EXPECT_EQ( priority_t.tracers()[0].name(),  bennu_t);
 
-  const psmrts::PsmrtsTracer &ellipsoid_t = tracer_s.get_ellipsoid_tracer();
-  EXPECT_STREQ( ellipsoid_t.type().c_str(),  "tracer" );
-  EXPECT_STREQ( ellipsoid_t.model().c_str(), "ellipsoid" );
-  EXPECT_STREQ( ellipsoid_t.name().c_str(),  "ellipsoid" );  
 }
 
 
@@ -221,20 +214,13 @@ TEST_F(PsmrtsSpiceinit, PsmrtsSpiceinitNaifDsk ) {
   PsmrtsShapeModel *psmrts_t = dynamic_cast<PsmrtsShapeModel *>( camera_t->target()->shape() );
   ASSERT_NE( psmrts_t, nullptr );
 
-  const psmrts::PsmrtsTracerSystem &tracer_s = psmrts_t->tracer_system();
-  EXPECT_EQ( tracer_s.size(), 1 );
-
-  const psmrts::PsmrtsPriorityTracer &priority_t = tracer_s.get_shape_tracer();
+  const psmrts::PsmrtsPriorityTracer &priority_t = psmrts_t->tracer();
   ASSERT_EQ( priority_t.size(), 1 );
   
   EXPECT_STREQ( priority_t.tracers()[0].type().c_str(),  "tracer" );
   EXPECT_STREQ( priority_t.tracers()[0].model().c_str(), "naifdsk" );
   // EXPECT_EQ( priority_t.tracers()[0].name(),  bennu_t.toStdString() );
 
-  const psmrts::PsmrtsTracer &ellipsoid_t = tracer_s.get_ellipsoid_tracer();
-  EXPECT_STREQ( ellipsoid_t.type().c_str(),  "tracer" );
-  EXPECT_STREQ( ellipsoid_t.model().c_str(), "ellipsoid" );
-  EXPECT_STREQ( ellipsoid_t.name().c_str(),  "ellipsoid" );  
 }
 
 TEST_F(PsmrtsSpiceinit, PsmrtsSpiceinitEllipsoid ) {
@@ -265,20 +251,13 @@ TEST_F(PsmrtsSpiceinit, PsmrtsSpiceinitEllipsoid ) {
   PsmrtsShapeModel *psmrts_t = dynamic_cast<PsmrtsShapeModel *>( camera_t->target()->shape() );
   ASSERT_NE( psmrts_t, nullptr );
 
-  const psmrts::PsmrtsTracerSystem &tracer_s = psmrts_t->tracer_system();
-  EXPECT_EQ( tracer_s.size(), 1 );
-
-  const psmrts::PsmrtsPriorityTracer &priority_t = tracer_s.get_shape_tracer();
+  const psmrts::PsmrtsPriorityTracer &priority_t = psmrts_t->tracer();
   ASSERT_EQ( priority_t.size(), 1 );
   
   EXPECT_STREQ( priority_t.tracers()[0].type().c_str(),  "tracer" );
   EXPECT_STREQ( priority_t.tracers()[0].model().c_str(), "ellipsoid" );
   EXPECT_EQ( priority_t.tracers()[0].name(),  bennu_t.toStdString() );
 
-  const psmrts::PsmrtsTracer &ellipsoid_t = tracer_s.get_ellipsoid_tracer();
-  EXPECT_STREQ( ellipsoid_t.type().c_str(),  "tracer" );
-  EXPECT_STREQ( ellipsoid_t.model().c_str(), "ellipsoid" );
-  EXPECT_STREQ( ellipsoid_t.name().c_str(),  "ellipsoid" );  
 }
 
 TEST_F(PsmrtsSpiceinit, PsmrtsSpiceinitSpheroid ) {
@@ -309,20 +288,13 @@ TEST_F(PsmrtsSpiceinit, PsmrtsSpiceinitSpheroid ) {
   PsmrtsShapeModel *psmrts_t = dynamic_cast<PsmrtsShapeModel *>( camera_t->target()->shape() );
   ASSERT_NE( psmrts_t, nullptr );
 
-  const psmrts::PsmrtsTracerSystem &tracer_s = psmrts_t->tracer_system();
-  EXPECT_EQ( tracer_s.size(), 1 );
-
-  const psmrts::PsmrtsPriorityTracer &priority_t = tracer_s.get_shape_tracer();
+  const psmrts::PsmrtsPriorityTracer &priority_t = psmrts_t->tracer();
   ASSERT_EQ( priority_t.size(), 1 );
   
   EXPECT_STREQ( priority_t.tracers()[0].type().c_str(),  "tracer" );
   EXPECT_STREQ( priority_t.tracers()[0].model().c_str(), "ellipsoid" );
   EXPECT_EQ( priority_t.tracers()[0].name(),  bennu_t.toStdString() );
 
-  const psmrts::PsmrtsTracer &ellipsoid_t = tracer_s.get_ellipsoid_tracer();
-  EXPECT_STREQ( ellipsoid_t.type().c_str(),  "tracer" );
-  EXPECT_STREQ( ellipsoid_t.model().c_str(), "ellipsoid" );
-  EXPECT_STREQ( ellipsoid_t.name().c_str(),  "ellipsoid" );  
 }
 
 TEST_F(PsmrtsSpiceinit, PsmrtsSpiceinitIsisBullet ) {
@@ -434,10 +406,7 @@ TEST_F(PsmrtsSpiceinit, PsmrtsSpiceinitPriorityTest ) {
   PsmrtsShapeModel *psmrts_t = dynamic_cast<PsmrtsShapeModel *>( camera_t->target()->shape() );
   ASSERT_NE( psmrts_t, nullptr );
 
-  const psmrts::PsmrtsTracerSystem &tracer_s = psmrts_t->tracer_system();
-  EXPECT_EQ( tracer_s.size(), 3 );
-
-  const psmrts::PsmrtsPriorityTracer &priority_t = tracer_s.get_shape_tracer();
+  const psmrts::PsmrtsPriorityTracer &priority_t = psmrts_t->tracer();
   ASSERT_EQ( priority_t.size(), 3 );
   
   EXPECT_STREQ( priority_t.tracers()[0].type().c_str(),  "tracer" );
@@ -452,17 +421,12 @@ TEST_F(PsmrtsSpiceinit, PsmrtsSpiceinitPriorityTest ) {
   EXPECT_EQ( priority_t.tracers()[1].name(),  bennu_list[2].toStdString() );
   EXPECT_EQ( priority_t.tracers()[2].name(),  bennu_list[3].toStdString() );
 
-  const psmrts::PsmrtsTracer &ellipsoid_t = tracer_s.get_ellipsoid_tracer();
-  EXPECT_STREQ( ellipsoid_t.type().c_str(),  "tracer" );
-  EXPECT_STREQ( ellipsoid_t.model().c_str(), "ellipsoid" );
-  EXPECT_STREQ( ellipsoid_t.name().c_str(),  "ellipsoid" );
-  
   // Lets trace the center pixel and see which tracer we get
   EXPECT_TRUE( camera_t->SetImage( 512.0, 512.0 ) );
   auto ray_sl = psmrts_t->get_shape_trace();
   EXPECT_TRUE( ray_sl.hasHit() );
   EXPECT_TRUE( ray_sl.isValid() );
-  auto tracer_at_intercept = tracer_s.get_tracer_from_intercept( ray_sl );
+  auto tracer_at_intercept = psmrts_t->tracer().get_tracer( ray_sl.trace() );
   EXPECT_EQ( tracer_at_intercept.model(), "bullet" );
 
   // Now go the other way
@@ -471,7 +435,7 @@ TEST_F(PsmrtsSpiceinit, PsmrtsSpiceinitPriorityTest ) {
   auto ray_llr = psmrts_t->get_shape_trace();
   EXPECT_TRUE( ray_llr.hasHit() );
   EXPECT_TRUE( ray_llr.isValid() );
-  auto tracer_at_intercept_llr = tracer_s.get_tracer_from_intercept( ray_llr );
+  auto tracer_at_intercept_llr = psmrts_t->tracer().get_tracer( ray_llr.trace() );
   EXPECT_EQ( tracer_at_intercept_llr.model(), "bullet" );
   EXPECT_TRUE( ray_sl.trace().isNear( ray_llr.trace(), 0.00001 ) );
 

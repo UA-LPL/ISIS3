@@ -32,23 +32,16 @@ TEST( PsmrtsShapeModelTests, DefaultConstructor ) {
   EXPECT_FALSE((bool) default_psm.get_shape_trace().hasHit());
 
   // Get the PSMRTS tracer system and evaluate its default state
-  const auto &tracer_s = default_psm.tracer_system();
+  const auto &tracer_s = default_psm.tracer();
 
   EXPECT_EQ(tracer_s.name(), "isis" );
   EXPECT_EQ(tracer_s.size(), 0 );
-  EXPECT_EQ(tracer_s.error_count(), 0 );
-
-  // Explicit test of priorty tracer
-  EXPECT_FALSE( (bool) tracer_s.get_shape_tracer().isValid() );
-  EXPECT_FALSE( (bool) tracer_s.get_ellipsoid_tracer().isValid() );
-
 }
 
 TEST( PsmrtsShapeModelTests, IsisTracerComparisons ) {
 
   // This will also test the PSMRTS ISIS path translator system
   const double tolerance_km = 1.0e-6;
-  const double tolerance_d = 1.0e-5;
 
   const std::string dsk     = "$osirisrex/kernels/dsk/bennu_g_12600mm_alt_obj_0000n00000_v021a.bds";
   const std::vector<double> bennu_radii = { 0.283065, 0.271215, 0.249720 };

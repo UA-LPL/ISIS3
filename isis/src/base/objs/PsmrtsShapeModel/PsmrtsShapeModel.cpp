@@ -35,7 +35,7 @@ namespace Isis {
                                      m_parameters(),
                                      m_shape_ray_t(),
                                      m_latlon_ray_t(),
-                                     m_tracer_s( "isis" ),
+                                     m_tracer( "isis" ),
                                      m_tolerance( DefaultDistanceTolerance ),
                                      m_psmrts_debug( false ) {
     // defaults for ShapeModel parent class include:
@@ -76,7 +76,7 @@ namespace Isis {
                                       m_parameters(),
                                       m_shape_ray_t(),
                                       m_latlon_ray_t(),
-                                      m_tracer_s( ),
+                                      m_tracer( ),
                                       m_tolerance( DefaultDistanceTolerance ),
                                       m_psmrts_debug( false ) {
 
@@ -92,8 +92,8 @@ namespace Isis {
 
     setName("PSMRTS");
     std::string name_t = qt_to_string( get_file_name( pvl, "isis_label" ) );
-    m_tracer_s = psmrts::PsmrtsTracerSystem( name_t, 
-                                             create_isis_path_translator( "isisdata" ) );
+    auto tracer_s = psmrts::PsmrtsTracerSystem( name_t, 
+                                                create_isis_path_translator( "isisdata" ) );
 
     PvlGroup &kernels = pvl.findGroup("Kernels", Pvl::Traverse);
     PvlFlatMap kmap_t = PvlFlatMap( kernels );
@@ -155,7 +155,7 @@ namespace Isis {
 
     // Attempt to initialize the DSK file - exception ensues if errors occur
     // error thrown if ShapeModel=Null (i.e. Ellipsoid)
-    m_tracer_s = psmrts::PsmrtsTracerSystem( name_t, v_shapefiles, m_tracer_s.translations( ) );
+    tracer_s = psmrts::PsmrtsTracerSystem( name_t, v_shapefiles, tracer_s.translations( ) );
     NaifStatus::CheckErrors();
 
     // Add the ellipsoid as defined in target
@@ -168,8 +168,8 @@ namespace Isis {
 
     // If it is defined set up the reference ellipsoid
     if ( radii.size() > 0 ) {
-      m_tracer_s.set_reference_ellipsoid( qt_to_string( target->systemName() ), 
-                                          radii );
+      tracer_s.set_reference_ellipsoid( qt_to_string( target->systemName() ), 
+                                        radii );
                                          
     }
 
@@ -187,9 +187,13 @@ namespace Isis {
 
 
     //Check for errors and throw if any occur
-    if ( m_tracer_s.error_count() > 0 ) {
-      m_tracer_s.throw_errors();
+    if ( tracer_s.error_count() > 0 ) {
+      tracer_s.throw_errors();
     }
+
+    // Now extract the priority tracer which allows discard of the
+    // PsmrtsTracerSystem
+    m_tracer = tracer_s.create_priority_tracer();
 
     // Update the labels with PSMRTS data/info
     psmrts_p.add( "RayTraceEngine", "psmrts" );
@@ -205,7 +209,7 @@ namespace Isis {
   }
 
 
-  /**
+/**
    * @brief Constructor for creating new shape model from the same DSK file
    *
    * This constructor provides the ability to create a formal shape model from the
@@ -224,7 +228,35 @@ namespace Isis {
                                      m_parameters( parameters ),
                                      m_shape_ray_t(),
                                      m_latlon_ray_t(),
-                                     m_tracer_s( tracer_s ),
+                                     m_tracer( tracer_s.get_shape_tracer() ),
+                                     m_tolerance( DefaultDistanceTolerance ),
+                                     m_psmrts_debug( false ) {
+
+    setName("PSMRTS");
+    m_psmrts_debug = toBool( m_parameters.get( "PsmrtsDebug", "false" ) );
+    clearSurfacePoint();
+  }
+
+  /**
+   * @brief Constructor for creating new shape model from the same DSK file
+   *
+   * This constructor provides the ability to create a formal shape model from the
+   * NAIF DSK plate model file already opened. This approach allows multiple
+   * threads to access the same DSK file interface without the overhead of opening
+   * many instances of the same file.
+   *
+   * @author 2014-02-12 Kris Becker
+   *
+   * @param model DSK plate model from an existing NaifDskPlateModel (see the
+   *              model() method
+   */
+  PsmrtsShapeModel::PsmrtsShapeModel(const psmrts::PsmrtsPriorityTracer &tracer_t,
+                                     const PvlFlatMap &parameters ) :
+                                     ShapeModel(),
+                                     m_parameters( parameters ),
+                                     m_shape_ray_t(),
+                                     m_latlon_ray_t(),
+                                     m_tracer( tracer_t ),
                                      m_tolerance( DefaultDistanceTolerance ),
                                      m_psmrts_debug( false ) {
 
@@ -241,7 +273,7 @@ namespace Isis {
       std::cout << "RunTime (s):    " << m_shape_ray_t.tracker().runtime_s() << std::endl;
       std::cout << "ShapeRayCount:  " << m_shape_ray_t.tracker().count() << std::endl;
       std::cout << "LatLotRayCount: " << m_latlon_ray_t.tracker().count() << std::endl;
-      for ( const auto &tracer : this->tracer_system().get_shape_tracer().tracers() ) {
+      for ( const auto &tracer : m_tracer.tracers() ) {
         auto uid = tracer.uid();
         std::cout << "\nTracerUid:   " << uid << std::endl;
         std::cout << "Name:        " << tracer.name() << std::endl;
@@ -279,7 +311,7 @@ namespace Isis {
     Eigen::Vector3d lookdir_t( lookDirection.data() ); 
 
     m_shape_ray_t.set_trace( observer_t,lookdir_t );
-    m_tracer_s.shape_trace( m_shape_ray_t );
+    m_tracer.process( m_shape_ray_t );
 
     return ( this->updateTraceState( m_shape_ray_t ) );
   }
@@ -306,7 +338,7 @@ namespace Isis {
                                           const bool &backCheck ) {
 
     bool status = getSurfaceLatLonRadius( lat, lon, 
-                                          m_tracer_s.get_shape_tracer(),
+                                          m_tracer,
                                           m_shape_ray_t );
 
     // If successful, set observer and calculate lookdir
@@ -324,7 +356,7 @@ namespace Isis {
       // Check for occlusions
       if ( true == backCheck ) {
         if ( emission_angle_isvalid( datum_r.m_normal, -datum_r.m_lookdir ) ) {
-          if ( true == m_tracer_s.shape_trace( m_shape_ray_t ) ) {
+          if ( true == m_tracer.process( m_shape_ray_t ) ) {
             if ( !m_shape_ray_t.trace().isNear( ray_t, get_tolerance() ) ) {
               m_shape_ray_t.set_trace( observer_t, lookdir_t );
             }
@@ -363,7 +395,7 @@ namespace Isis {
     // Initialize/compute ground intercept
     bool status = getSurfaceLatLonRadius( surfpt.GetLatitude(), 
                                           surfpt.GetLongitude(), 
-                                          m_tracer_s.get_shape_tracer(),
+                                          m_tracer,
                                           m_shape_ray_t );
 
     if ( true == status ) {
@@ -380,7 +412,7 @@ namespace Isis {
       // Check for occlusion if requested
       if ( true == backCheck ) {
         if ( emission_angle_isvalid( datum_r.m_normal, -datum_r.m_lookdir ) ) {
-          if ( true == m_tracer_s.shape_trace( m_shape_ray_t ) ) {
+          if ( true == m_tracer.process( m_shape_ray_t ) ) {
             if ( !m_shape_ray_t.trace().isNear( ray_t, get_tolerance() ) ) {
               m_shape_ray_t.set_trace( observer_t, lookdir_t );
             }
@@ -508,7 +540,7 @@ namespace Isis {
 
       // Trace it to the surface for the real radius
       if ( emission_angle_isvalid( m_shape_ray_t.trace().normal(), -ray_t.trace().lookdir() ) ) {
-        if ( m_tracer_s.process( ray_t ) ) {
+        if ( m_tracer.process( ray_t ) ) {
           if ( m_shape_ray_t.trace().isNear( ray_t.trace(), get_tolerance() ) ) {
             return ( true );
           }
@@ -578,7 +610,7 @@ namespace Isis {
     // Get surface intercept at the requested location
     psmrts::PRQRayTrace ray_t;                                         
     bool status = getSurfaceLatLonRadius( lat, lon, 
-                                          m_tracer_s.get_shape_tracer(), 
+                                          m_tracer, 
                                           ray_t );
     // Trace it to the surface for the real radius
     if ( true == status ) {
@@ -844,15 +876,15 @@ namespace Isis {
       std::cout << "PsmrtsShapeModel::create() done!" << std::endl;
       std::cout << "FactoryShapeCount:  " << psmrts::PsmrtsFactory().shapes().size() << std::endl;
       std::cout << "FactoryTracerCount: " << psmrts::PsmrtsFactory().tracers().size() << std::endl;
-      print_vector( "TracerIds: ", model_t->tracer_system().get_shape_tracer().tracers() );
-      for ( const auto &tracer : model_t->tracer_system().get_shape_tracer().tracers() ) {
+      print_vector( "TracerIds: ", model_t->tracer().tracers() );
+      for ( const auto &tracer : model_t->tracer().tracers() ) {
         auto uid = tracer.uid();
-        std::cout << "TracerUid: " << uid << std::endl;
+        std::cout << "\nTracerUid: " << uid << std::endl;
         std::cout << "Name:      " << tracer.name() << std::endl;
         std::cout << "Type:      " << tracer.type() << std::endl;
         std::cout << "Model:     " << tracer.model() << std::endl;
         std::cout << "Config:    " << tracer.config().to_json().dump(-1) << std::endl;
-        std::cout << "Tracer:    " << model_t->tracer_system().get_shape_tracer().inventory().find( uid ).name() << std::endl;
+        std::cout << "Tracer:    " << model_t->tracer().inventory().find( uid ).name() << std::endl << std::endl;
       }
     }
 
